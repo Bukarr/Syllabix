@@ -37,22 +37,21 @@ export default function Dashboard() {
     );
   }
 
-  const currentWeek = 3; // Would calculate from term dates
   const totalWeeks = 13;
   const completedPlans = plans.filter(p => p.status === 'complete').length;
   const totalSubjects = profile.subjects.length;
   const weeklyTarget = totalSubjects;
-  const weeklyCompleted = plans.filter(p => p.week === currentWeek && p.status === 'complete').length;
-  // Calculate streak from actual data
+
+  // Calculate streak from actual data — starts at 0
   const calculateStreak = () => {
     if (plans.length === 0) return 0;
+    // Find the highest week number with completed plans
+    const maxWeek = Math.max(...plans.filter(p => p.status === 'complete').map(p => p.week), 0);
     let streak = 0;
-    for (let w = currentWeek; w >= 1; w--) {
+    for (let w = maxWeek; w >= 1; w--) {
       const weekPlans = plans.filter(p => p.week === w && p.status === 'complete');
       if (weekPlans.length >= totalSubjects) {
         streak++;
-      } else if (w < currentWeek) {
-        break;
       } else {
         break;
       }
@@ -60,6 +59,12 @@ export default function Dashboard() {
     return streak;
   };
   const streak = calculateStreak();
+
+  // Term progress is driven by streak (completed weeks), not a hardcoded current week
+  const currentWeek = streak;
+  const weeklyCompleted = currentWeek > 0
+    ? plans.filter(p => p.week === currentWeek && p.status === 'complete').length
+    : 0;
 
   const containerVariants = {
     hidden: { opacity: 0 },
