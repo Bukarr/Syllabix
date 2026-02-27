@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Globe, Trash2, Download } from 'lucide-react';
+import { User, Globe, Trash2, Download, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getProfile, saveProfile, type TeacherProfile } from '@/lib/db';
+import {
+  getProfile, saveProfile, getAllLessonPlans, getAllSOW,
+  type TeacherProfile
+} from '@/lib/db';
+import { exportLessonPlanToPDF } from '@/lib/export';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
@@ -21,6 +25,45 @@ export default function SettingsPage() {
     }
   };
 
+  const handleExportAll = async () => {
+    try {
+      const plans = await getAllLessonPlans();
+      if (plans.length === 0) {
+        toast.info('No lesson plans to export');
+        return;
+      }
+      for (const plan of plans) {
+        await exportLessonPlanToPDF(plan);
+      }
+      toast.success(`Exported ${plans.length} lesson plan(s) as PDF`);
+    } catch {
+      toast.error('Export failed');
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (confirm('Are you sure you want to delete all data? This cannot be undone.')) {
+      const { getDB } = await import('@/lib/db');
+      const db = await getDB();
+      await db.clear('lessonPlans');
+      await db.clear('schemesOfWork');
+      toast.success('All lesson plans and schemes deleted');
+    }
+  };
+
+  const handleRequestNotifications = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        toast.success('Notifications enabled! You\'ll get weekly reminders.');
+      } else {
+        toast.error('Notification permission denied');
+      }
+    } else {
+      toast.info('Notifications not supported on this device');
+    }
+  };
+
   if (!profile) return null;
 
   return (
@@ -28,6 +71,7 @@ export default function SettingsPage() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
         <h2 className="text-xl font-heading font-bold">Settings</h2>
 
+        {/* Profile */}
         <div className="glass-card rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-3 mb-2">
             <User className="h-5 w-5 text-primary" />
@@ -52,6 +96,7 @@ export default function SettingsPage() {
           <Button className="w-full touch-target" onClick={handleSave}>Save Changes</Button>
         </div>
 
+        {/* Language */}
         <div className="glass-card rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-3 mb-2">
             <Globe className="h-5 w-5 text-primary" />
@@ -68,7 +113,7 @@ export default function SettingsPage() {
                 key={lang.code}
                 onClick={() => {
                   setProfile(p => p ? { ...p, language: lang.code } : p);
-                  toast.info(`Language support for ${lang.label} coming soon`);
+                  if (lang.code !== 'en') toast.info(`Language support for ${lang.label} coming soon`);
                 }}
                 className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all touch-target ${
                   profile.language === lang.code
@@ -82,11 +127,30 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Notifications */}
         <div className="glass-card rounded-2xl p-5 space-y-3">
-          <Button variant="outline" className="w-full touch-target">
-            <Download className="h-4 w-4 mr-2" /> Export All Data
+          <div className="flex items-center gap-3 mb-2">
+            <Bell className="h-5 w-5 text-primary" />
+            <h3 className="font-heading font-semibold">Reminders</h3>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Get reminded to create your weekly lesson plans every Friday at 4 PM.
+          </p>
+          <Button variant="outline" className="w-full touch-target" onClick={handleRequestNotifications}>
+            <Bell className="h-4 w-4 mr-2" /> Enable Notifications
           </Button>
-          <Button variant="outline" className="w-full touch-target text-destructive border-destructive/20 hover:bg-destructive/10">
+        </div>
+
+        {/* Data management */}
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <Button variant="outline" className="w-full touch-target" onClick={handleExportAll}>
+            <Download className="h-4 w-4 mr-2" /> Export All Plans as PDF
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full touch-target text-destructive border-destructive/20 hover:bg-destructive/10"
+            onClick={handleDeleteAll}
+          >
             <Trash2 className="h-4 w-4 mr-2" /> Delete All Data
           </Button>
         </div>

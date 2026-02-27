@@ -6,6 +6,7 @@ import { TopBar, BottomNav } from "@/components/AppShell";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
 import LessonPlanForm from "./pages/LessonPlanForm";
+import MyPlans from "./pages/MyPlans";
 import SchemeOfWork from "./pages/SchemeOfWork";
 import Templates from "./pages/Templates";
 import SettingsPage from "./pages/Settings";
@@ -29,6 +30,7 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/lesson-plan" element={<LessonPlanForm />} />
+                    <Route path="/my-plans" element={<MyPlans />} />
                     <Route path="/scheme" element={<SchemeOfWork />} />
                     <Route path="/templates" element={<Templates />} />
                     <Route path="/settings" element={<SettingsPage />} />

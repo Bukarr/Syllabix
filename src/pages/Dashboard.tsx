@@ -43,7 +43,23 @@ export default function Dashboard() {
   const totalSubjects = profile.subjects.length;
   const weeklyTarget = totalSubjects;
   const weeklyCompleted = plans.filter(p => p.week === currentWeek && p.status === 'complete').length;
-  const streak = 2; // Would calculate from data
+  // Calculate streak from actual data
+  const calculateStreak = () => {
+    if (plans.length === 0) return 0;
+    let streak = 0;
+    for (let w = currentWeek; w >= 1; w--) {
+      const weekPlans = plans.filter(p => p.week === w && p.status === 'complete');
+      if (weekPlans.length >= totalSubjects) {
+        streak++;
+      } else if (w < currentWeek) {
+        break;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  };
+  const streak = calculateStreak();
 
   const containerVariants = {
     hidden: { opacity: 0 },

@@ -3,9 +3,9 @@ import { LayoutDashboard, BookOpen, FileText, Library, Settings } from 'lucide-r
 import { OnlineIndicator } from './OnlineIndicator';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/', icon: LayoutDashboard, label: 'Home' },
+  { to: '/my-plans', icon: FileText, label: 'Plans' },
   { to: '/scheme', icon: BookOpen, label: 'Scheme' },
-  { to: '/lesson-plan', icon: FileText, label: 'Plans' },
   { to: '/templates', icon: Library, label: 'Templates' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
