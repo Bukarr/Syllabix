@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Download, Plus, Trash2, Check, Edit2, Eye } from 'lucide-react';
+import { BookOpen, Download, Plus, Trash2, Check, Edit2, ChevronDown, ChevronUp, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,16 +26,16 @@ export default function SchemeOfWork() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [sows, setSows] = useState<SOWType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<'list' | 'create' | 'edit' | 'review'>('list');
-  const [selectedSOW, setSelectedSOW] = useState<SOWType | null>(null);
 
-  // Create/edit form state
+  // Form state
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [subject, setSubject] = useState('');
   const [classLevel, setClassLevel] = useState('');
   const [term, setTerm] = useState(1);
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [weeks, setWeeks] = useState<WeekEntry[]>([]);
-  const [setupDone, setSetupDone] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [expandedSOW, setExpandedSOW] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -47,17 +47,8 @@ export default function SchemeOfWork() {
     setLoading(false);
   }
 
-  const startBlankWeeks = () => {
+  const initWeeks = () => {
     setWeeks(Array.from({ length: 13 }, (_, i) => emptyWeek(i + 1)));
-    setSetupDone(true);
-  };
-
-  const addWeek = () => {
-    setWeeks(prev => [...prev, emptyWeek(prev.length + 1)]);
-  };
-
-  const removeWeek = (index: number) => {
-    setWeeks(prev => prev.filter((_, i) => i !== index).map((w, i) => ({ ...w, week: i + 1 })));
   };
 
   const updateWeek = (index: number, field: string, value: any) => {
@@ -68,53 +59,59 @@ export default function SchemeOfWork() {
     });
   };
 
-  const handleSave = async (status: 'draft' | 'confirmed') => {
+  const handleSave = async () => {
+    if (!subject || !classLevel) {
+      toast.error('Please select subject and class level');
+      return;
+    }
     const hasContent = weeks.some(w => w.topic.trim() !== '');
     if (!hasContent) {
-      toast.error('Please enter at least one topic before saving');
+      toast.error('Please enter at least one topic');
       return;
     }
     const sow: SOWType = {
-      id: selectedSOW?.id || crypto.randomUUID(),
+      id: editingId || crypto.randomUUID(),
       subject,
       classLevel,
       term,
       year,
       weeks,
-      status,
-      createdAt: selectedSOW?.createdAt || new Date().toISOString(),
+      status: 'confirmed',
+      createdAt: editingId
+        ? (sows.find(s => s.id === editingId)?.createdAt || new Date().toISOString())
+        : new Date().toISOString(),
     };
     await saveSOW(sow);
-    toast.success(status === 'confirmed' ? 'Scheme of Work confirmed!' : 'Draft saved');
+    toast.success(editingId ? 'Scheme of Work updated!' : 'Scheme of Work saved!');
     await loadData();
     resetForm();
   };
 
   const resetForm = () => {
-    setMode('list');
-    setSelectedSOW(null);
+    setEditingId(null);
     setSubject('');
     setClassLevel('');
     setTerm(1);
     setYear(new Date().getFullYear().toString());
     setWeeks([]);
-    setSetupDone(false);
+    setShowForm(false);
   };
 
-  const openForEdit = (sow: SOWType) => {
-    setSelectedSOW(sow);
+  const startNew = () => {
+    resetForm();
+    initWeeks();
+    setShowForm(true);
+  };
+
+  const startEdit = (sow: SOWType) => {
+    setEditingId(sow.id);
     setSubject(sow.subject);
     setClassLevel(sow.classLevel);
     setTerm(sow.term);
     setYear(sow.year);
-    setWeeks(sow.weeks);
-    setSetupDone(true);
-    setMode('edit');
-  };
-
-  const openForReview = (sow: SOWType) => {
-    setSelectedSOW(sow);
-    setMode('review');
+    setWeeks(sow.weeks.length === 13 ? sow.weeks : Array.from({ length: 13 }, (_, i) => sow.weeks[i] || emptyWeek(i + 1)));
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleExport = async (sow: SOWType) => {
@@ -130,84 +127,39 @@ export default function SchemeOfWork() {
     );
   }
 
-  // Review mode — read-only view
-  if (mode === 'review' && selectedSOW) {
-    return (
-      <div className="pb-24 px-4 pt-4">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-heading font-bold">Review Scheme</h2>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => openForEdit(selectedSOW)}>
-                <Edit2 className="h-3 w-3 mr-1" /> Edit
-              </Button>
-              <Button variant="outline" size="sm" onClick={resetForm}>Back</Button>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-xl p-4 space-y-1">
-            <p className="text-sm font-semibold">{selectedSOW.subject}</p>
-            <p className="text-xs text-muted-foreground">{selectedSOW.classLevel} • Term {selectedSOW.term} • {selectedSOW.year}</p>
-            <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full mt-1 ${
-              selectedSOW.status === 'confirmed' ? 'bg-primary/20 text-primary' : 'bg-warning/20 text-warning'
-            }`}>
-              {selectedSOW.status}
-            </span>
-          </div>
-
-          {selectedSOW.weeks.map((w) => (
-            <div key={w.week} className="glass-card rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-primary">{w.week}</span>
-                </div>
-                <span className="text-sm font-semibold">Week {w.week}</span>
-              </div>
-              <div className="space-y-1 text-sm">
-                <p><span className="text-muted-foreground">Topic:</span> {w.topic || '—'}</p>
-                <p><span className="text-muted-foreground">Sub-topic:</span> {w.subTopic || '—'}</p>
-                <p><span className="text-muted-foreground">Objectives:</span> {w.objectives.filter(Boolean).join('; ') || '—'}</p>
-                <p><span className="text-muted-foreground">Materials:</span> {w.materials.filter(Boolean).join(', ') || '—'}</p>
-              </div>
-            </div>
-          ))}
-
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => handleExport(selectedSOW)}>
-              <Download className="h-4 w-4 mr-1" /> Export PDF
+  return (
+    <div className="pb-24 px-4 pt-4">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-heading font-bold">Scheme of Work</h2>
+          {!showForm && (
+            <Button size="sm" onClick={startNew}>
+              <Plus className="h-4 w-4 mr-1" /> New
             </Button>
-            <Button className="flex-1" onClick={() => openForEdit(selectedSOW)}>
-              <Edit2 className="h-4 w-4 mr-1" /> Edit
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+          )}
+        </div>
 
-  // Create / Edit mode
-  if (mode === 'create' || mode === 'edit') {
-    return (
-      <div className="pb-24 px-4 pt-4">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-heading font-bold">
-              {mode === 'create' ? 'New Scheme of Work' : 'Edit Scheme'}
-            </h2>
-            <Button variant="outline" size="sm" onClick={resetForm}>Back</Button>
-          </div>
+        {/* ── Input Form ── */}
+        {showForm && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <div className="glass-card rounded-xl p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-heading font-semibold">
+                  {editingId ? 'Edit Scheme' : 'Create New Scheme'}
+                </h3>
+                <Button variant="ghost" size="sm" onClick={resetForm} className="text-xs">Cancel</Button>
+              </div>
 
-          {/* Subject & class selection — only show when creating and not yet set up */}
-          {!setupDone && (
-            <div className="space-y-4">
+              {/* Subject */}
               <div>
-                <Label className="text-sm font-medium">Subject</Label>
+                <Label className="text-xs font-medium">Subject</Label>
                 <div className="grid grid-cols-2 gap-2 mt-1.5">
                   {(profile?.subjects || []).map(s => (
                     <button
                       key={s}
-                      onClick={() => setSubject(s)}
-                      className={`py-3 px-3 rounded-lg border text-xs font-medium transition-all touch-target text-left ${
+                      onClick={() => { setSubject(s); setClassLevel(''); }}
+                      className={`py-2.5 px-3 rounded-lg border text-xs font-medium transition-all text-left ${
                         subject === s ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'
                       }`}
                     >
@@ -216,33 +168,39 @@ export default function SchemeOfWork() {
                   ))}
                 </div>
               </div>
-              <div>
-                <Label className="text-sm font-medium">Class Level</Label>
-                <div className="grid grid-cols-2 gap-2 mt-1.5">
-                  {(profile?.classes || [])
-                    .filter(c => c.subject === subject)
-                    .map(c => (
-                      <button
-                        key={c.level}
-                        onClick={() => setClassLevel(c.level)}
-                        className={`py-3 px-3 rounded-lg border text-xs font-medium transition-all touch-target ${
-                          classLevel === c.level ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'
-                        }`}
-                      >
-                        {c.level}
-                      </button>
-                    ))}
+
+              {/* Class Level */}
+              {subject && (
+                <div>
+                  <Label className="text-xs font-medium">Class Level</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-1.5">
+                    {(profile?.classes || [])
+                      .filter(c => c.subject === subject)
+                      .map(c => (
+                        <button
+                          key={c.level}
+                          onClick={() => setClassLevel(c.level)}
+                          className={`py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+                            classLevel === c.level ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'
+                          }`}
+                        >
+                          {c.level}
+                        </button>
+                      ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Term & Year */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-sm font-medium">Term</Label>
+                  <Label className="text-xs font-medium">Term</Label>
                   <div className="flex gap-2 mt-1.5">
                     {[1, 2, 3].map(t => (
                       <button
                         key={t}
                         onClick={() => setTerm(t)}
-                        className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                        className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all ${
                           term === t ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'
                         }`}
                       >
@@ -252,138 +210,136 @@ export default function SchemeOfWork() {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Year</Label>
-                  <Input value={year} onChange={e => setYear(e.target.value)} className="mt-1.5 touch-target" />
+                  <Label className="text-xs font-medium">Year</Label>
+                  <Input value={year} onChange={e => setYear(e.target.value)} className="mt-1.5 h-9 text-sm" />
                 </div>
               </div>
-              <Button
-                className="w-full touch-target"
-                disabled={!subject || !classLevel}
-                onClick={startBlankWeeks}
-              >
-                Start Entering Topics
-              </Button>
             </div>
-          )}
 
-          {/* Weeks — manual entry */}
-          {setupDone && (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">
-                Enter your topics for each week. {subject} — {classLevel} — Term {term}
-              </p>
-              {weeks.map((w, i) => (
-                <div key={i} className="glass-card rounded-xl p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-primary">{w.week}</span>
+            {/* Weekly topic inputs */}
+            {subject && classLevel && (
+              <>
+                <p className="text-xs text-muted-foreground px-1">
+                  Enter topics for each week — {subject}, {classLevel}, Term {term}
+                </p>
+
+                <div className="space-y-2">
+                  {weeks.map((w, i) => (
+                    <div key={i} className="glass-card rounded-xl p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                          <span className="text-[10px] font-bold text-primary">{w.week}</span>
+                        </div>
+                        <span className="text-xs font-semibold">Week {w.week}</span>
                       </div>
-                      <span className="text-sm font-semibold">Week {w.week}</span>
+                      <Input
+                        placeholder="Topic *"
+                        value={w.topic}
+                        onChange={e => updateWeek(i, 'topic', e.target.value)}
+                        className="text-sm h-9"
+                      />
+                      <Input
+                        placeholder="Sub-topic"
+                        value={w.subTopic}
+                        onChange={e => updateWeek(i, 'subTopic', e.target.value)}
+                        className="text-sm h-9"
+                      />
+                      <Textarea
+                        placeholder="Objectives (one per line)"
+                        value={w.objectives.join('\n')}
+                        onChange={e => updateWeek(i, 'objectives', e.target.value.split('\n'))}
+                        rows={2}
+                        className="text-sm"
+                      />
+                      <Input
+                        placeholder="Materials (comma separated)"
+                        value={w.materials.join(', ')}
+                        onChange={e => updateWeek(i, 'materials', e.target.value.split(',').map(s => s.trim()))}
+                        className="text-sm h-9"
+                      />
                     </div>
-                    {weeks.length > 1 && (
-                      <button onClick={() => removeWeek(i)} className="text-destructive/60 hover:text-destructive p-1">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                  <Input
-                    placeholder="Topic *"
-                    value={w.topic}
-                    onChange={e => updateWeek(i, 'topic', e.target.value)}
-                    className="text-sm"
-                  />
-                  <Input
-                    placeholder="Sub-topic"
-                    value={w.subTopic}
-                    onChange={e => updateWeek(i, 'subTopic', e.target.value)}
-                    className="text-sm"
-                  />
-                  <Textarea
-                    placeholder="Objectives (one per line)"
-                    value={w.objectives.join('\n')}
-                    onChange={e => updateWeek(i, 'objectives', e.target.value.split('\n'))}
-                    rows={2}
-                    className="text-sm"
-                  />
-                  <Input
-                    placeholder="Materials (comma separated)"
-                    value={w.materials.join(', ')}
-                    onChange={e => updateWeek(i, 'materials', e.target.value.split(',').map(s => s.trim()))}
-                    className="text-sm"
-                  />
+                  ))}
                 </div>
-              ))}
 
-              <Button variant="outline" className="w-full touch-target" onClick={addWeek}>
-                <Plus className="h-4 w-4 mr-1" /> Add Week
-              </Button>
-
-              <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom">
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 touch-target" onClick={() => handleSave('draft')}>
-                    Save Draft
-                  </Button>
-                  <Button className="flex-1 touch-target" onClick={() => handleSave('confirmed')}>
-                    <Check className="h-4 w-4 mr-1" /> Confirm
+                {/* Save button — fixed at bottom */}
+                <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom z-10">
+                  <Button className="w-full touch-target" onClick={handleSave}>
+                    <Save className="h-4 w-4 mr-1" /> {editingId ? 'Update Scheme' : 'Save Scheme'}
                   </Button>
                 </div>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </div>
-    );
-  }
+              </>
+            )}
+          </motion.div>
+        )}
 
-  // List mode
-  return (
-    <div className="pb-24 px-4 pt-4">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-heading font-bold">Scheme of Work</h2>
-          <Button size="sm" onClick={() => { resetForm(); setMode('create'); }}>
-            <Plus className="h-4 w-4 mr-1" /> New
-          </Button>
-        </div>
-
-        {sows.length === 0 ? (
+        {/* ── Saved Schemes ── */}
+        {!showForm && sows.length === 0 && (
           <div className="glass-card rounded-2xl p-8 text-center">
             <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <h3 className="font-heading font-semibold mb-2">No Schemes Yet</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Create a Scheme of Work by entering your topics for each week of the term.
             </p>
-            <Button onClick={() => { resetForm(); setMode('create'); }}>Create Scheme</Button>
+            <Button onClick={startNew}>Create Scheme</Button>
           </div>
-        ) : (
+        )}
+
+        {!showForm && sows.length > 0 && (
           <div className="space-y-3">
-            {sows.map(sow => (
-              <div key={sow.id} className="glass-card rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <BookOpen className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold">{sow.subject}</span>
-                  <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full ${
-                    sow.status === 'confirmed' ? 'bg-primary/20 text-primary' : 'bg-warning/20 text-warning'
-                  }`}>
-                    {sow.status}
-                  </span>
+            {sows.map(sow => {
+              const isExpanded = expandedSOW === sow.id;
+              const filledWeeks = sow.weeks.filter(w => w.topic.trim()).length;
+              return (
+                <div key={sow.id} className="glass-card rounded-xl overflow-hidden">
+                  {/* Summary row */}
+                  <button
+                    onClick={() => setExpandedSOW(isExpanded ? null : sow.id)}
+                    className="w-full p-4 text-left"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <BookOpen className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm font-semibold">{sow.subject}</span>
+                      <span className="ml-auto">
+                        {isExpanded
+                          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{sow.classLevel} • Term {sow.term} • {sow.year}</p>
+                    <p className="text-xs text-muted-foreground">{filledWeeks} of {sow.weeks.length} weeks filled</p>
+                  </button>
+
+                  {/* Expanded detail */}
+                  {isExpanded && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="px-4 pb-4 space-y-3">
+                      {sow.weeks.map(w => (
+                        <div key={w.week} className="border border-border rounded-lg p-3 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                              <span className="text-[9px] font-bold text-primary">{w.week}</span>
+                            </div>
+                            <span className="text-xs font-semibold">Week {w.week}</span>
+                          </div>
+                          <p className="text-xs"><span className="text-muted-foreground">Topic:</span> {w.topic || '—'}</p>
+                          <p className="text-xs"><span className="text-muted-foreground">Sub-topic:</span> {w.subTopic || '—'}</p>
+                          <p className="text-xs"><span className="text-muted-foreground">Objectives:</span> {w.objectives.filter(Boolean).join('; ') || '—'}</p>
+                          <p className="text-xs"><span className="text-muted-foreground">Materials:</span> {w.materials.filter(Boolean).join(', ') || '—'}</p>
+                        </div>
+                      ))}
+
+                      <div className="flex gap-2 pt-1">
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => startEdit(sow)}>
+                          <Edit2 className="h-3 w-3 mr-1" /> Edit
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleExport(sow)}>
+                          <Download className="h-3 w-3 mr-1" /> PDF
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">{sow.classLevel} • Term {sow.term} • {sow.year}</p>
-                <p className="text-xs text-muted-foreground">{sow.weeks.filter(w => w.topic).length} of {sow.weeks.length} weeks filled</p>
-                <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openForReview(sow)}>
-                    <Eye className="h-3 w-3 mr-1" /> Review
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openForEdit(sow)}>
-                    <Edit2 className="h-3 w-3 mr-1" /> Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => handleExport(sow)}>
-                    <Download className="h-3 w-3 mr-1" /> PDF
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </motion.div>
