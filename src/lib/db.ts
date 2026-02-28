@@ -147,4 +147,9 @@ export async function saveSOW(sow: SchemeOfWork): Promise<void> {
   await db.put('schemesOfWork', sow);
 }
 
+export async function deleteSOW(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('schemesOfWork', id);
+}
+
 export type { TeacherProfile, LessonPlan, SchemeOfWork };

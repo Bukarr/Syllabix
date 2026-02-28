@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  getProfile, getAllSOW, saveSOW,
+  getProfile, getAllSOW, saveSOW, deleteSOW,
   type TeacherProfile, type SchemeOfWork as SOWType
 } from '@/lib/db';
 import { SUBJECTS, CLASSES, SCHOOL_LEVELS } from '@/lib/curriculum';
@@ -118,6 +118,12 @@ export default function SchemeOfWork() {
   const handleExport = async (sow: SOWType) => {
     await exportSOWToPDF(sow);
     toast.success('PDF exported');
+  };
+
+  const handleDelete = async (sow: SOWType) => {
+    await deleteSOW(sow.id);
+    toast.success('Scheme of Work deleted');
+    await loadData();
   };
 
   if (loading) {
@@ -341,6 +347,9 @@ export default function SchemeOfWork() {
                         </Button>
                         <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleExport(sow)}>
                           <Download className="h-3 w-3 mr-1" /> PDF
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-xs text-destructive hover:bg-destructive/10" onClick={() => handleDelete(sow)}>
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </motion.div>

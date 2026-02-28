@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   FileText, Filter, Search, Trash2, Download, Eye,
-  CheckCircle2, Clock, ChevronRight
+  CheckCircle2, Clock, ChevronRight, Edit2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -133,6 +133,14 @@ export default function MyPlans() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() => navigate(`/lesson-plan?edit=${plan.id}`)}
+                  >
+                    <Edit2 className="h-3 w-3 mr-1" /> Edit
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
