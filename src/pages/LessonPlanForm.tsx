@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getProfile, saveLessonPlan, type LessonPlan, type TeacherProfile } from '@/lib/db';
-import { SUBJECTS, CLASSES, SCHOOL_LEVELS } from '@/lib/curriculum';
+import { getProfile, saveLessonPlan, getAllSOW, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
 import { toast } from 'sonner';
 
 const STEPS = ['Details', 'Objectives', 'Presentation', 'Assessment'];
@@ -16,6 +15,7 @@ export default function LessonPlanForm() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
+  const [sows, setSows] = useState<SchemeOfWork[]>([]);
   const [plan, setPlan] = useState<Partial<LessonPlan>>({
     subject: '',
     classLevel: '',
@@ -36,10 +36,30 @@ export default function LessonPlanForm() {
   });
 
   useEffect(() => {
-    getProfile().then(p => {
+    Promise.all([getProfile(), getAllSOW()]).then(([p, s]) => {
       if (p) setProfile(p);
+      setSows(s);
     });
   }, []);
+
+  // Auto-fill topic/subTopic/objectives from matching SOW when subject, classLevel, term, or week changes
+  useEffect(() => {
+    if (!plan.subject || !plan.classLevel || !plan.term || !plan.week) return;
+    const matchingSOW = sows.find(
+      s => s.subject === plan.subject && s.classLevel === plan.classLevel && s.term === plan.term
+    );
+    if (!matchingSOW) return;
+    const weekEntry = matchingSOW.weeks.find(w => w.week === plan.week);
+    if (weekEntry && weekEntry.topic) {
+      setPlan(prev => ({
+        ...prev,
+        topic: weekEntry.topic,
+        subTopic: weekEntry.subTopic,
+        objectives: weekEntry.objectives.filter(Boolean).length > 0 ? weekEntry.objectives.filter(Boolean) : prev.objectives,
+        materials: weekEntry.materials.filter(Boolean).length > 0 ? weekEntry.materials.filter(Boolean) : prev.materials,
+      }));
+    }
+  }, [plan.subject, plan.classLevel, plan.term, plan.week, sows]);
 
   const updatePlan = (field: string, value: any) => {
     setPlan(p => ({ ...p, [field]: value }));
