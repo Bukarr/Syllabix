@@ -9,6 +9,7 @@ import {
   getProfile, getAllSOW, saveSOW,
   type TeacherProfile, type SchemeOfWork as SOWType
 } from '@/lib/db';
+import { SUBJECTS, CLASSES, SCHOOL_LEVELS } from '@/lib/curriculum';
 import { exportSOWToPDF } from '@/lib/export';
 import { toast } from 'sonner';
 
@@ -155,7 +156,10 @@ export default function SchemeOfWork() {
               <div>
                 <Label className="text-xs font-medium">Subject</Label>
                 <div className="grid grid-cols-2 gap-2 mt-1.5">
-                  {(profile?.subjects || []).map(s => (
+                  {(profile?.subjects && profile.subjects.length > 0
+                    ? profile.subjects
+                    : Object.values(SUBJECTS).flat().filter((s, i, a) => a.indexOf(s) === i)
+                  ).map(s => (
                     <button
                       key={s}
                       onClick={() => { setSubject(s); setClassLevel(''); }}
@@ -174,23 +178,27 @@ export default function SchemeOfWork() {
                 <div>
                   <Label className="text-xs font-medium">Class Level</Label>
                   <div className="grid grid-cols-2 gap-2 mt-1.5">
-                    {(profile?.classes || [])
-                      .filter(c => c.subject === subject)
-                      .map(c => (
+                    {(() => {
+                      const profileClasses = (profile?.classes || [])
+                        .filter(c => c.subject === subject)
+                        .map(c => c.level);
+                      const fallbackClasses = Object.values(CLASSES).flat();
+                      const classOptions = profileClasses.length > 0 ? profileClasses : fallbackClasses;
+                      return classOptions.map(level => (
                         <button
-                          key={c.level}
-                          onClick={() => setClassLevel(c.level)}
+                          key={level}
+                          onClick={() => setClassLevel(level)}
                           className={`py-2.5 px-3 rounded-lg border text-xs font-medium transition-all ${
-                            classLevel === c.level ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'
+                            classLevel === level ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground'
                           }`}
                         >
-                          {c.level}
+                          {level}
                         </button>
-                      ))}
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
-
               {/* Term & Year */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
