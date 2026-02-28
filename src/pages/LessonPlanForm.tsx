@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Save, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getProfile, saveLessonPlan, getAllSOW, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
+import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
 import { toast } from 'sonner';
 
 const STEPS = ['Details', 'Objectives', 'Presentation', 'Assessment'];
 
 export default function LessonPlanForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [sows, setSows] = useState<SchemeOfWork[]>([]);
@@ -36,11 +38,15 @@ export default function LessonPlanForm() {
   });
 
   useEffect(() => {
-    Promise.all([getProfile(), getAllSOW()]).then(([p, s]) => {
+    Promise.all([getProfile(), getAllSOW(), getAllLessonPlans()]).then(([p, s, plans]) => {
       if (p) setProfile(p);
       setSows(s);
+      if (editId) {
+        const existing = plans.find(lp => lp.id === editId);
+        if (existing) setPlan(existing);
+      }
     });
-  }, []);
+  }, [editId]);
 
   // Auto-fill topic/subTopic/objectives from matching SOW when subject, classLevel, term, or week changes
   useEffect(() => {
@@ -94,7 +100,7 @@ export default function LessonPlanForm() {
 
   const handleSave = async (status: 'draft' | 'complete' = 'draft') => {
     const fullPlan: LessonPlan = {
-      id: crypto.randomUUID(),
+      id: editId || plan.id || crypto.randomUUID(),
       subject: plan.subject || '',
       classLevel: plan.classLevel || '',
       term: plan.term || 1,
