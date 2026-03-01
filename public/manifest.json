@@ -14,5 +14,10 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "en-NG",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false
 }
