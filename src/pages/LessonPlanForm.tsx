@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
 import { toast } from 'sonner';
+import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
 
 const STEPS = ['Details', 'Objectives', 'Presentation', 'Assessment'];
 
@@ -99,6 +100,26 @@ export default function LessonPlanForm() {
   };
 
   const handleSave = async (status: 'draft' | 'complete' = 'draft') => {
+    if (status === 'complete') {
+      const errs = validateAll(lessonPlanSchema, {
+        subject: plan.subject,
+        classLevel: plan.classLevel,
+        topic: plan.topic,
+        subTopic: plan.subTopic,
+        duration: plan.duration,
+        objectives: plan.objectives,
+        entryBehaviour: plan.entryBehaviour,
+        references: plan.references,
+        evaluation: plan.evaluation,
+        assignment: plan.assignment,
+        steps: plan.steps,
+      });
+      if (Object.keys(errs).length > 0) {
+        const firstErr = Object.values(errs)[0];
+        toast.error(firstErr || 'Please fix validation errors before saving');
+        return;
+      }
+    }
     const fullPlan: LessonPlan = {
       id: editId || plan.id || crypto.randomUUID(),
       subject: plan.subject || '',
@@ -213,6 +234,7 @@ export default function LessonPlanForm() {
                 <Label className="text-sm font-medium">Topic</Label>
                 <Input
                   placeholder="e.g. Whole Numbers"
+                  maxLength={200}
                   value={plan.topic}
                   onChange={e => updatePlan('topic', e.target.value)}
                   className="mt-1.5 touch-target"
@@ -222,6 +244,7 @@ export default function LessonPlanForm() {
                 <Label className="text-sm font-medium">Sub-topic</Label>
                 <Input
                   placeholder="e.g. Addition of 2-digit numbers"
+                  maxLength={200}
                   value={plan.subTopic}
                   onChange={e => updatePlan('subTopic', e.target.value)}
                   className="mt-1.5 touch-target"

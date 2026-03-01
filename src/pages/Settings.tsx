@@ -10,19 +10,36 @@ import {
 } from '@/lib/db';
 import { exportLessonPlanToPDF } from '@/lib/export';
 import { toast } from 'sonner';
+import { profileSchema, type ValidationErrors } from '@/lib/validation';
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
+  const [errors, setErrors] = useState<ValidationErrors>({});
 
   useEffect(() => {
     getProfile().then(p => p && setProfile(p));
   }, []);
 
+  const validateField = (field: 'name' | 'schoolName', value: string) => {
+    const result = profileSchema.shape[field].safeParse(value);
+    setErrors(prev => ({
+      ...prev,
+      [field]: result.success ? '' : result.error.errors[0]?.message || '',
+    }));
+  };
+
   const handleSave = async () => {
-    if (profile) {
-      await saveProfile(profile);
-      toast.success('Settings saved');
+    if (!profile) return;
+    const result = profileSchema.safeParse({ name: profile.name, schoolName: profile.schoolName });
+    if (!result.success) {
+      const errs: ValidationErrors = {};
+      result.error.errors.forEach(e => { errs[e.path[0] as string] = e.message; });
+      setErrors(errs);
+      toast.error(result.error.errors[0]?.message || 'Please fix validation errors');
+      return;
     }
+    await saveProfile(profile);
+    toast.success('Settings saved');
   };
 
   const handleExportAll = async () => {
@@ -81,17 +98,27 @@ export default function SettingsPage() {
             <Label className="text-sm font-medium">Name</Label>
             <Input
               value={profile.name}
-              onChange={e => setProfile(p => p ? { ...p, name: e.target.value } : p)}
+              maxLength={100}
+              onChange={e => {
+                setProfile(p => p ? { ...p, name: e.target.value } : p);
+                validateField('name', e.target.value);
+              }}
               className="mt-1 touch-target"
             />
+            {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
           </div>
           <div>
             <Label className="text-sm font-medium">School</Label>
             <Input
               value={profile.schoolName}
-              onChange={e => setProfile(p => p ? { ...p, schoolName: e.target.value } : p)}
+              maxLength={200}
+              onChange={e => {
+                setProfile(p => p ? { ...p, schoolName: e.target.value } : p);
+                validateField('schoolName', e.target.value);
+              }}
               className="mt-1 touch-target"
             />
+            {errors.schoolName && <p className="text-xs text-destructive mt-1">{errors.schoolName}</p>}
           </div>
           <Button className="w-full touch-target" onClick={handleSave}>Save Changes</Button>
         </div>
