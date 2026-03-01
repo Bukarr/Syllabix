@@ -11,6 +11,7 @@ import SchemeOfWork from "./pages/SchemeOfWork";
 import Templates from "./pages/Templates";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import InstallPrompt from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
+      <InstallPrompt />
       <BrowserRouter>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
