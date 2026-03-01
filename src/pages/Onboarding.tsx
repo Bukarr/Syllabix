@@ -119,8 +119,8 @@ export default function Onboarding() {
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
               </div>
               <div className="flex-1 flex flex-col items-center justify-center px-6 -mt-12 relative z-10">
-                <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center mb-4 glow">
-                  <BookOpen className="h-8 w-8 text-primary-foreground" />
+                <div className="h-16 w-16 rounded-2xl overflow-hidden mb-4 glow">
+                  <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
                 </div>
                 <h1 className="text-3xl font-heading font-bold text-foreground text-center mb-2">
                   Welcome to NaijaLesson
