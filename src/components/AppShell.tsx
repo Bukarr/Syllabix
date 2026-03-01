@@ -45,8 +45,8 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b border-border bg-card/95 backdrop-blur-md">
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-          <BookOpen className="h-4 w-4 text-primary-foreground" />
+        <div className="h-8 w-8 rounded-lg overflow-hidden">
+          <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
         </div>
         <h1 className="text-lg font-heading font-bold text-foreground">NaijaLesson</h1>
       </div>
