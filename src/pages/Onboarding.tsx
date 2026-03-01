@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { saveProfile, type TeacherProfile } from '@/lib/db';
 import { SCHOOL_LEVELS, CLASSES, SUBJECTS, GEOPOLITICAL_ZONES, STATES, CLASSROOM_RESOURCES } from '@/lib/curriculum';
 import heroImage from '@/assets/hero-classroom.jpg';
+import { profileSchema, type ValidationErrors } from '@/lib/validation';
 
 const TOTAL_STEPS = 4;
 
@@ -29,15 +30,27 @@ export default function Onboarding() {
   });
 
   const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const [errors, setErrors] = useState<ValidationErrors>({});
 
   const canProceed = () => {
     switch (step) {
-      case 0: return true; // Welcome
-      case 1: return (profile.name?.trim() ?? '').length > 0 && (profile.schoolName?.trim() ?? '').length > 0;
+      case 0: return true;
+      case 1: {
+        const result = profileSchema.safeParse({ name: profile.name, schoolName: profile.schoolName });
+        return result.success;
+      }
       case 2: return (profile.zone ?? '').length > 0 && (profile.state ?? '').length > 0;
       case 3: return (profile.subjects?.length ?? 0) > 0;
       default: return true;
     }
+  };
+
+  const validateProfileField = (field: 'name' | 'schoolName', value: string) => {
+    const result = profileSchema.shape[field].safeParse(value);
+    setErrors(prev => ({
+      ...prev,
+      [field]: result.success ? '' : result.error.errors[0]?.message || '',
+    }));
   };
 
   const handleFinish = async () => {
@@ -151,20 +164,30 @@ export default function Onboarding() {
                   <Input
                     id="name"
                     placeholder="e.g. Mrs. Adebayo Funke"
+                    maxLength={100}
                     value={profile.name}
-                    onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
+                    onChange={e => {
+                      setProfile(p => ({ ...p, name: e.target.value }));
+                      validateProfileField('name', e.target.value);
+                    }}
                     className="mt-1.5 touch-target"
                   />
+                  {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
                 </div>
                 <div>
                   <Label htmlFor="school" className="text-sm font-medium">School Name</Label>
                   <Input
                     id="school"
                     placeholder="e.g. Government Secondary School, Ikoyi"
+                    maxLength={200}
                     value={profile.schoolName}
-                    onChange={e => setProfile(p => ({ ...p, schoolName: e.target.value }))}
+                    onChange={e => {
+                      setProfile(p => ({ ...p, schoolName: e.target.value }));
+                      validateProfileField('schoolName', e.target.value);
+                    }}
                     className="mt-1.5 touch-target"
                   />
+                  {errors.schoolName && <p className="text-xs text-destructive mt-1">{errors.schoolName}</p>}
                 </div>
                 <div>
                   <Label className="text-sm font-medium mb-2 block">School Type</Label>
