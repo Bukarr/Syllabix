@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Download, Plus, Trash2, Check, Edit2, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -289,7 +290,7 @@ export default function SchemeOfWork() {
         {/* ── Saved Schemes ── */}
         {!showForm && sows.length === 0 && (
           <div className="glass-card rounded-2xl p-8 text-center">
-            <img src="/icon-512.png" alt="NaijaLesson" className="h-10 w-10 mx-auto mb-3 rounded-lg" />
+            <AppLogo size="xl" className="mx-auto mb-3" />
             <h3 className="font-heading font-semibold mb-2">No Schemes Yet</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Create a Scheme of Work by entering your topics for each week of the term.
@@ -311,7 +312,7 @@ export default function SchemeOfWork() {
                     className="w-full p-4 text-left"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <img src="/icon-512.png" alt="NaijaLesson" className="h-4 w-4 shrink-0 rounded-sm" />
+                      <AppLogo size="xs" />
                       <span className="text-sm font-semibold">{sow.subject}</span>
                       <span className="ml-auto">
                         {isExpanded
