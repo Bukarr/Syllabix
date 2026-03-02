@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Library, Search, BookOpen, Copy, ChevronRight } from 'lucide-react';
+import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllLessonPlans, saveLessonPlan, type LessonPlan } from '@/lib/db';
@@ -258,9 +259,7 @@ export default function Templates() {
             {filtered.map(template => (
               <div key={template.id} className="glass-card rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
-                    <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
-                  </div>
+                  <AppLogo size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{template.title}</p>
                     <p className="text-xs text-muted-foreground">{template.subject} • {template.classLevel}</p>

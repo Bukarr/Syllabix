@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, School, MapPin, BookOpen, Users, Wrench, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -119,9 +120,7 @@ export default function Onboarding() {
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
               </div>
               <div className="flex-1 flex flex-col items-center justify-center px-6 -mt-12 relative z-10">
-                <div className="h-16 w-16 rounded-2xl overflow-hidden mb-4 glow">
-                  <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
-                </div>
+                <AppLogo size="lg" className="mb-4 glow" />
                 <h1 className="text-3xl font-heading font-bold text-foreground text-center mb-2">
                   Welcome to NaijaLesson
                 </h1>
@@ -283,9 +282,7 @@ export default function Onboarding() {
               className="flex-1 px-6 pt-8 pb-24"
             >
               <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 rounded-xl overflow-hidden">
-                  <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
-                </div>
+                <AppLogo size="md" />
                 <div>
                   <h2 className="text-xl font-heading font-bold">Your Subjects</h2>
                   <p className="text-sm text-muted-foreground">Select your school level and subjects</p>

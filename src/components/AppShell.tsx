@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, FileText, Library, Settings } from 'lucide-react';
 import { OnlineIndicator } from './OnlineIndicator';
+import { AppLogo } from './AppLogo';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Home' },
@@ -45,9 +46,7 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b border-border bg-card/95 backdrop-blur-md">
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg overflow-hidden">
-          <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
-        </div>
+        <AppLogo size="sm" />
         <h1 className="text-lg font-heading font-bold text-foreground">NaijaLesson</h1>
       </div>
       <OnlineIndicator />
