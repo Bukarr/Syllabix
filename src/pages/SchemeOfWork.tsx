@@ -289,7 +289,7 @@ export default function SchemeOfWork() {
         {/* ── Saved Schemes ── */}
         {!showForm && sows.length === 0 && (
           <div className="glass-card rounded-2xl p-8 text-center">
-            <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <img src="/icon-512.png" alt="NaijaLesson" className="h-10 w-10 mx-auto mb-3 rounded-lg" />
             <h3 className="font-heading font-semibold mb-2">No Schemes Yet</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Create a Scheme of Work by entering your topics for each week of the term.
@@ -311,7 +311,7 @@ export default function SchemeOfWork() {
                     className="w-full p-4 text-left"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <BookOpen className="h-4 w-4 text-primary shrink-0" />
+                      <img src="/icon-512.png" alt="NaijaLesson" className="h-4 w-4 shrink-0 rounded-sm" />
                       <span className="text-sm font-semibold">{sow.subject}</span>
                       <span className="ml-auto">
                         {isExpanded

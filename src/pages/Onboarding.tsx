@@ -283,8 +283,8 @@ export default function Onboarding() {
               className="flex-1 px-6 pt-8 pb-24"
             >
               <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-primary" />
+                <div className="h-10 w-10 rounded-xl overflow-hidden">
+                  <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <h2 className="text-xl font-heading font-bold">Your Subjects</h2>

@@ -258,8 +258,8 @@ export default function Templates() {
             {filtered.map(template => (
               <div key={template.id} className="glass-card rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <BookOpen className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
+                    <img src="/icon-512.png" alt="NaijaLesson" className="h-full w-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{template.title}</p>
