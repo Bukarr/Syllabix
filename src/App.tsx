@@ -12,6 +12,10 @@ import Templates from "./pages/Templates";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
+import { initNotifications } from "./lib/notifications";
+
+// Init notification scheduling on app start
+initNotifications();
 
 const queryClient = new QueryClient();
 
