@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Save, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, BookOpen, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
+import { generateLessonContent } from '@/lib/ai';
 import { toast } from 'sonner';
 import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
 
@@ -99,6 +100,43 @@ export default function LessonPlanForm() {
     });
   };
 
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!plan.subject || !plan.classLevel || !plan.topic) {
+      toast.error('Please enter Subject, Class, and Topic before generating');
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const generated = await generateLessonContent({
+        subject: plan.subject,
+        classLevel: plan.classLevel,
+        topic: plan.topic,
+        subTopic: plan.subTopic,
+        term: plan.term,
+        week: plan.week,
+        resources: profile?.resources?.map(String),
+      });
+      setPlan(prev => ({
+        ...prev,
+        objectives: generated.objectives?.length ? generated.objectives : prev.objectives,
+        entryBehaviour: generated.entryBehaviour || prev.entryBehaviour,
+        materials: generated.materials?.length ? generated.materials : prev.materials,
+        references: generated.references || prev.references,
+        steps: generated.steps?.length ? generated.steps : prev.steps,
+        evaluation: generated.evaluation || prev.evaluation,
+        assignment: generated.assignment || prev.assignment,
+      }));
+      toast.success('Lesson content generated! Review and edit as needed.');
+      // Jump to step 1 (objectives) so teacher can review
+      setStep(1);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to generate lesson content');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
   const handleSave = async (status: 'draft' | 'complete' = 'draft') => {
     if (status === 'complete') {
       const errs = validateAll(lessonPlanSchema, {
@@ -250,6 +288,27 @@ export default function LessonPlanForm() {
                   className="mt-1.5 touch-target"
                 />
               </div>
+
+              {/* AI Generate Button */}
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || !plan.subject || !plan.topic}
+                className="w-full touch-target font-semibold bg-gradient-to-r from-primary to-accent text-primary-foreground"
+                variant="default"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating lesson content…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Auto-Generate Lesson Content
+                  </>
+                )}
+              </Button>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-sm font-medium">Date</Label>
