@@ -387,7 +387,7 @@ export default function Onboarding() {
       </div>
 
       {/* Bottom nav */}
-      {step > 0 && step < TOTAL_STEPS + 1 && (
+      {step > 0 && step < TOTAL_STEPS && (
         <div className="fixed bottom-0 left-0 right-0 px-6 py-4 bg-card/95 backdrop-blur-md border-t border-border safe-bottom">
           <div className="flex gap-3">
             <Button
@@ -401,14 +401,14 @@ export default function Onboarding() {
               className="flex-1 touch-target font-semibold"
               disabled={!canProceed()}
               onClick={() => {
-                if (step === TOTAL_STEPS) {
-                  setStep(TOTAL_STEPS + 1);
+                if (step === TOTAL_STEPS - 1) {
+                  setStep(TOTAL_STEPS);
                   return;
                 }
                 setStep(s => s + 1);
               }}
             >
-              {step === TOTAL_STEPS ? 'Finish Setup' : 'Continue'}
+              {step === TOTAL_STEPS - 1 ? 'Finish Setup' : 'Continue'}
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Globe, Trash2, Download, Bell, Clock } from 'lucide-react';
+import { User, Globe, Trash2, Download, Bell, Clock, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import {
   getNotificationSettings, saveNotificationSettings, requestNotificationPermission,
   getPermissionStatus, type NotificationSettings
 } from '@/lib/notifications';
+import { SubjectEditor } from '@/components/SubjectEditor';
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
@@ -159,6 +160,23 @@ export default function SettingsPage() {
             {errors.schoolName && <p className="text-xs text-destructive mt-1">{errors.schoolName}</p>}
           </div>
           <Button className="w-full touch-target" onClick={handleSave}>Save Changes</Button>
+        </div>
+
+        {/* Subjects */}
+        <div className="glass-card rounded-2xl p-5 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <h3 className="font-heading font-semibold">Subjects</h3>
+          </div>
+          <SubjectEditor
+            subjects={profile.subjects}
+            onUpdate={async (subjects) => {
+              const updated = { ...profile, subjects };
+              setProfile(updated);
+              await saveProfile(updated);
+              toast.success('Subjects updated');
+            }}
+          />
         </div>
 
         {/* Language */}
