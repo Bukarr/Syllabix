@@ -11,7 +11,7 @@ import { generateLessonContent } from '@/lib/ai';
 import { toast } from 'sonner';
 import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
 
-const STEPS = ['Details', 'Objectives', 'Presentation', 'Assessment'];
+const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
 
 export default function LessonPlanForm() {
   const navigate = useNavigate();
@@ -128,11 +128,11 @@ export default function LessonPlanForm() {
         evaluation: generated.evaluation || prev.evaluation,
         assignment: generated.assignment || prev.assignment,
       }));
-      toast.success('Lesson content generated! Review and edit as needed.');
+      toast.success('Lesson note generated! Review and edit as needed.');
       // Jump to step 1 (objectives) so teacher can review
       setStep(1);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to generate lesson content');
+      toast.error(err.message || 'Failed to generate lesson note');
     } finally {
       setIsGenerating(false);
     }
@@ -299,12 +299,12 @@ export default function LessonPlanForm() {
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating lesson content…
+                    Generating lesson note…
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Auto-Generate Lesson Content
+                    Auto-Generate Lesson Note
                   </>
                 )}
               </Button>
@@ -338,7 +338,7 @@ export default function LessonPlanForm() {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Performance Objectives</Label>
-                <p className="text-xs text-muted-foreground mb-2">What students will be able to do by end of lesson</p>
+                <p className="text-xs text-muted-foreground mb-2">What pupils should be able to do by end of lesson</p>
                 {plan.objectives?.map((obj, i) => (
                   <Input
                     key={i}
@@ -352,9 +352,9 @@ export default function LessonPlanForm() {
               </div>
               <div>
                 <Label className="text-sm font-medium">Entry Behaviour</Label>
-                <p className="text-xs text-muted-foreground mb-1">Prior knowledge students should have</p>
+                <p className="text-xs text-muted-foreground mb-1">Prior knowledge pupils should have</p>
                 <Textarea
-                  placeholder="Students have previously learned..."
+                  placeholder="Pupils have previously learned..."
                   value={plan.entryBehaviour}
                   onChange={e => updatePlan('entryBehaviour', e.target.value)}
                   className="touch-target"
@@ -391,8 +391,8 @@ export default function LessonPlanForm() {
 
         {step === 2 && (
           <>
-            <h2 className="text-xl font-heading font-bold">Lesson Presentation</h2>
-            <p className="text-xs text-muted-foreground">Add at least 3 teaching steps with teacher and student activities</p>
+            <h2 className="text-xl font-heading font-bold">Lesson Note Content</h2>
+            <p className="text-xs text-muted-foreground">Add the note sections that pupils will copy into their books</p>
             <div className="space-y-4">
               {plan.steps?.map((s, i) => (
                 <div key={i} className="glass-card rounded-xl p-4 space-y-3">
@@ -400,12 +400,12 @@ export default function LessonPlanForm() {
                     <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
                       <span className="text-xs font-bold text-primary">{i + 1}</span>
                     </div>
-                    <span className="text-sm font-medium">Step {i + 1}</span>
+                    <span className="text-sm font-medium">Section {i + 1}</span>
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Teacher Activity</Label>
+                    <Label className="text-xs text-muted-foreground">Note Content</Label>
                     <Textarea
-                      placeholder="The teacher will..."
+                      placeholder="Content pupils will copy..."
                       value={s.teacherActivity}
                       onChange={e => updateStep(i, 'teacherActivity', e.target.value)}
                       className="mt-1 touch-target"
@@ -413,9 +413,9 @@ export default function LessonPlanForm() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Student Activity</Label>
+                    <Label className="text-xs text-muted-foreground">Pupil Activity</Label>
                     <Textarea
-                      placeholder="Students will..."
+                      placeholder="Pupils will..."
                       value={s.studentActivity}
                       onChange={e => updateStep(i, 'studentActivity', e.target.value)}
                       className="mt-1 touch-target"
@@ -425,7 +425,7 @@ export default function LessonPlanForm() {
                 </div>
               ))}
               <Button variant="outline" onClick={addStep} className="w-full touch-target">
-                + Add Step
+                + Add Section
               </Button>
             </div>
           </>
@@ -433,11 +433,11 @@ export default function LessonPlanForm() {
 
         {step === 3 && (
           <>
-            <h2 className="text-xl font-heading font-bold">Evaluation & Assignment</h2>
+            <h2 className="text-xl font-heading font-bold">Classwork & Assignment</h2>
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium">Evaluation</Label>
-                <p className="text-xs text-muted-foreground mb-1">Questions or tasks to assess understanding</p>
+                <Label className="text-sm font-medium">Classwork / Exercises</Label>
+                <p className="text-xs text-muted-foreground mb-1">Questions or exercises for pupils to attempt in class</p>
                 <Textarea
                   placeholder="1. What is...?&#10;2. List three...&#10;3. Explain how..."
                   value={plan.evaluation}
@@ -447,8 +447,8 @@ export default function LessonPlanForm() {
                 />
               </div>
               <div>
-                <Label className="text-sm font-medium">Assignment</Label>
-                <p className="text-xs text-muted-foreground mb-1">Homework or follow-up task</p>
+                <Label className="text-sm font-medium">Take-Home Assignment</Label>
+                <p className="text-xs text-muted-foreground mb-1">Homework for pupils to complete at home</p>
                 <Textarea
                   placeholder="Solve questions 1-5 on page..."
                   value={plan.assignment}

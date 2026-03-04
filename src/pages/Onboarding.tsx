@@ -122,7 +122,7 @@ export default function Onboarding() {
               <div className="flex-1 flex flex-col items-center justify-center px-6 -mt-12 relative z-10">
                 <AppLogo size="lg" className="mb-4 glow" />
                 <h1 className="text-3xl font-heading font-bold text-foreground text-center mb-2">
-                  Welcome to NaijaLesson
+                  Welcome to Syllabix NG
                 </h1>
                 <p className="text-muted-foreground text-center max-w-sm mb-8 leading-relaxed">
                   Create professional lesson plans aligned with the Nigerian curriculum. Works offline, designed for you.

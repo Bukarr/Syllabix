@@ -1,7 +1,7 @@
 {
-  "name": "NaijaLesson",
-  "short_name": "NaijaLesson",
-  "description": "Nigerian Teacher Lesson Plan Generator — Create professional lesson plans aligned with the Nigerian curriculum",
+  "name": "Syllabix NG",
+  "short_name": "Syllabix NG",
+  "description": "Nigerian Lesson Copy Note Generator — Auto-generate pupil lesson notes aligned with the Nigerian curriculum",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B0F0D",

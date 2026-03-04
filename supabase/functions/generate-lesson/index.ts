@@ -26,54 +26,59 @@ serve(async (req) => {
 
     const systemPrompt = `You are an expert Nigerian teacher and curriculum specialist with deep knowledge of the NERDC-approved curriculum for all levels (Primary, Junior Secondary, Senior Secondary).
 
-Your task is to generate a complete, inspection-ready lesson plan for a Nigerian school.
+Your task is to generate a complete LESSON COPY NOTE — the note that pupils will copy into their exercise books during the lesson. This is NOT a lesson plan for the teacher; it is the actual content pupils write down.
 
 RULES:
 - Align all content strictly to the given topic, subject, and class level
-- Use simple, professional teacher language appropriate for Nigerian classrooms
-- Use Nigerian-relevant examples, materials, and contexts
+- Use simple, clear language appropriate for pupils at the specified class level
+- Use Nigerian-relevant examples and contexts
 - Assume limited teaching resources (chalkboard, textbooks, locally available objects) unless told otherwise
 - Do NOT introduce concepts outside the approved scope for this class level
 - Do NOT mention curriculum documents, AI, or internal reasoning
 - Do NOT copy curriculum text verbatim — interpret and present naturally
 - If the topic is broad, infer the most likely NERDC-approved interpretation for the class and week
-- All content must be ready for school inspection
+- The note must be what a pupil would actually write in their notebook during class
+- Include a clear title/heading, date placeholder, definitions, explanations, worked examples, diagrams descriptions where relevant, and classwork/exercises
+- Content should be inspection-ready and suitable for Nigerian school standards
 
 OUTPUT FORMAT — Return a valid JSON object with these exact keys:
 {
-  "objectives": ["objective 1", "objective 2", "objective 3"],
-  "entryBehaviour": "Prior knowledge students should have...",
+  "objectives": ["By the end of this lesson, pupils should be able to: objective 1", "objective 2", "objective 3"],
+  "entryBehaviour": "What pupils already know from previous lessons...",
   "materials": ["material 1", "material 2"],
   "references": "Textbook reference with chapter and page",
   "steps": [
     {
-      "teacherActivity": "Introduction / Set Induction: The teacher will...",
-      "studentActivity": "Students will..."
+      "teacherActivity": "TOPIC / HEADING: Write the topic and sub-topic on the board for pupils to copy",
+      "studentActivity": "Pupils copy the topic and date into their exercise books"
     },
     {
-      "teacherActivity": "Step 1: The teacher will...",
-      "studentActivity": "Students will..."
+      "teacherActivity": "INTRODUCTION: Brief introduction connecting to previous knowledge",
+      "studentActivity": "Pupils listen and recall previous lesson"
     },
     {
-      "teacherActivity": "Step 2: The teacher will...",
-      "studentActivity": "Students will..."
+      "teacherActivity": "CONTENT NOTE: The main content pupils will copy — definitions, explanations, key points, with numbering",
+      "studentActivity": "Pupils copy the note into their exercise books"
     },
     {
-      "teacherActivity": "Step 3: The teacher will...",
-      "studentActivity": "Students will..."
+      "teacherActivity": "WORKED EXAMPLES: Step-by-step examples solved on the board",
+      "studentActivity": "Pupils copy the worked examples and follow along"
     },
     {
-      "teacherActivity": "Summary / Board Summary: The teacher will...",
-      "studentActivity": "Students will..."
+      "teacherActivity": "SUMMARY / BOARD SUMMARY: Key points summarized clearly for pupils to copy",
+      "studentActivity": "Pupils copy the summary into their exercise books"
     }
   ],
-  "evaluation": "1. Question one\\n2. Question two\\n3. Question three",
-  "assignment": "Homework or follow-up task"
+  "evaluation": "CLASSWORK / EXERCISES:\\n1. Question one\\n2. Question two\\n3. Question three",
+  "assignment": "HOMEWORK / TAKE-HOME ASSIGNMENT:\\nTask for pupils to complete at home"
 }
 
-IMPORTANT: Return ONLY the JSON object. No markdown, no explanation, no code fences.`;
+IMPORTANT: 
+- The "teacherActivity" field contains the ACTUAL NOTE CONTENT that pupils will copy, not instructions to the teacher
+- The "studentActivity" describes what pupils do at each stage
+- Return ONLY the JSON object. No markdown, no explanation, no code fences.`;
 
-    const userPrompt = `Generate a complete lesson plan for:
+    const userPrompt = `Generate a complete lesson copy note for pupils for:
 - Subject: ${subject}
 - Class: ${classLevel}
 - Term: ${term || "1"}
@@ -82,7 +87,7 @@ IMPORTANT: Return ONLY the JSON object. No markdown, no explanation, no code fen
 ${subTopic ? `- Sub-topic: ${subTopic}` : ""}
 ${resources && resources.length > 0 ? `- Available resources: ${resources.join(", ")}` : "- Available resources: Chalkboard, textbooks, locally available objects"}
 
-Generate all sections with at least 5 teaching steps (including introduction/set induction and summary).`;
+Generate a detailed pupil note with at least 5 sections (heading, introduction, main content, worked examples, and summary). The content should be what pupils actually copy into their books.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -115,7 +120,7 @@ Generate all sections with at least 5 teaching steps (including introduction/set
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: "Failed to generate lesson content" }),
+        JSON.stringify({ error: "Failed to generate lesson note" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
