@@ -1,13 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, FileText, Library, Settings } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Sparkles, Settings } from 'lucide-react';
 import { OnlineIndicator } from './OnlineIndicator';
 import { AppLogo } from './AppLogo';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Home' },
-  { to: '/my-plans', icon: FileText, label: 'Plans' },
+  { to: '/my-plans', icon: FileText, label: 'Notes' },
   { to: '/scheme', icon: BookOpen, label: 'Scheme' },
-  { to: '/templates', icon: Library, label: 'Templates' },
+  { to: '/generate', icon: Sparkles, label: 'AI Notes' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
