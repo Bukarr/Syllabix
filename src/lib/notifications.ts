@@ -98,7 +98,7 @@ function showNotification() {
 
   const message = messages[Math.floor(Math.random() * messages.length)];
 
-  new Notification('NaijaLesson Reminder', {
+  new Notification('Syllabix NG Reminder', {
     body: message,
     icon: '/icon-192.png',
     badge: '/icon-192.png',

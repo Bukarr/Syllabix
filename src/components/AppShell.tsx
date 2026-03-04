@@ -47,7 +47,7 @@ export function TopBar() {
     <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b border-border bg-card/95 backdrop-blur-md">
       <div className="flex items-center gap-2">
         <AppLogo size="sm" />
-        <h1 className="text-lg font-heading font-bold text-foreground">NaijaLesson</h1>
+        <h1 className="text-lg font-heading font-bold text-foreground">Syllabix NG</h1>
       </div>
       <OnlineIndicator />
     </header>

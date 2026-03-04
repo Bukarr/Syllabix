@@ -62,7 +62,7 @@ export default function MyPlans() {
     <div className="pb-24 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-heading font-bold">My Lesson Plans</h2>
+          <h2 className="text-xl font-heading font-bold">My Lesson Notes</h2>
           <Button size="sm" onClick={() => navigate('/lesson-plan')}>
             + New
           </Button>
@@ -100,7 +100,7 @@ export default function MyPlans() {
         {filtered.length === 0 ? (
           <div className="glass-card rounded-2xl p-8 text-center">
             <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No lesson plans found</p>
+            <p className="text-sm text-muted-foreground">No lesson notes found</p>
             <Button className="mt-4" onClick={() => navigate('/lesson-plan')}>
               Create Your First Plan
             </Button>

@@ -170,7 +170,7 @@ export default function Dashboard() {
               onClick={() => navigate('/lesson-plan')}
             >
               <Plus className="h-5 w-5 text-primary" />
-              <span className="text-xs font-medium">New Lesson Plan</span>
+              <span className="text-xs font-medium">New Lesson Note</span>
             </Button>
             <Button
               variant="outline"
