@@ -54,6 +54,19 @@ interface SchemeOfWork {
   createdAt: string;
 }
 
+interface AINote {
+  id: string;
+  subject: string;
+  classLevel: string;
+  term: number;
+  year: string;
+  topic: string;
+  content: string;
+  status: 'draft' | 'saved';
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface NaijaLessonDB extends DBSchema {
   profile: {
     key: string;
@@ -77,10 +90,20 @@ interface NaijaLessonDB extends DBSchema {
       'by-term': number;
     };
   };
+  aiNotes: {
+    key: string;
+    value: AINote;
+    indexes: {
+      'by-subject': string;
+      'by-classLevel': string;
+      'by-term': number;
+      'by-status': string;
+    };
+  };
 }
 
 const DB_NAME = 'naijalesson-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export async function getDB() {
   return openDB<NaijaLessonDB>(DB_NAME, DB_VERSION, {
@@ -104,6 +127,15 @@ export async function getDB() {
         const sowStore = db.createObjectStore('schemesOfWork', { keyPath: 'id' });
         sowStore.createIndex('by-subject', 'subject');
         sowStore.createIndex('by-term', 'term');
+      }
+
+      // AI Notes store
+      if (!db.objectStoreNames.contains('aiNotes')) {
+        const aiStore = db.createObjectStore('aiNotes', { keyPath: 'id' });
+        aiStore.createIndex('by-subject', 'subject');
+        aiStore.createIndex('by-classLevel', 'classLevel');
+        aiStore.createIndex('by-term', 'term');
+        aiStore.createIndex('by-status', 'status');
       }
     },
   });
@@ -152,4 +184,20 @@ export async function deleteSOW(id: string): Promise<void> {
   await db.delete('schemesOfWork', id);
 }
 
-export type { TeacherProfile, LessonPlan, SchemeOfWork };
+// AI Notes operations
+export async function getAllAINotes(): Promise<AINote[]> {
+  const db = await getDB();
+  return db.getAll('aiNotes');
+}
+
+export async function saveAINote(note: AINote): Promise<void> {
+  const db = await getDB();
+  await db.put('aiNotes', note);
+}
+
+export async function deleteAINote(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('aiNotes', id);
+}
+
+export type { TeacherProfile, LessonPlan, SchemeOfWork, AINote };

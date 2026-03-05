@@ -7,7 +7,7 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Home' },
   { to: '/my-plans', icon: FileText, label: 'Notes' },
   { to: '/scheme', icon: BookOpen, label: 'Scheme' },
-  { to: '/copy-notes', icon: PenLine, label: 'Copy Notes' },
+  { to: '/ai-notes', icon: PenLine, label: 'AI Notes' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
