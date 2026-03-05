@@ -8,7 +8,7 @@ import Onboarding from "./pages/Onboarding";
 import LessonPlanForm from "./pages/LessonPlanForm";
 import MyPlans from "./pages/MyPlans";
 import SchemeOfWork from "./pages/SchemeOfWork";
-import GenerateNotes from "./pages/GenerateNotes";
+import CopyNoteGenerator from "./pages/CopyNoteGenerator";
 import Templates from "./pages/Templates";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -39,7 +39,7 @@ const App = () => (
                     <Route path="/lesson-plan" element={<LessonPlanForm />} />
                     <Route path="/my-plans" element={<MyPlans />} />
                     <Route path="/scheme" element={<SchemeOfWork />} />
-                    <Route path="/generate" element={<GenerateNotes />} />
+                    <Route path="/copy-notes" element={<CopyNoteGenerator />} />
                     <Route path="/templates" element={<Templates />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="*" element={<NotFound />} />

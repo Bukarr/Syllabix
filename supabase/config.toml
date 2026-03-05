@@ -2,3 +2,6 @@ project_id = "xhlnraxpfiditioibdnj"
 
 [functions.generate-lesson]
 verify_jwt = false
+
+[functions.copy-note-chat]
+verify_jwt = false
