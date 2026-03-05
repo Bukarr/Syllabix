@@ -39,7 +39,7 @@ const App = () => (
                     <Route path="/lesson-plan" element={<LessonPlanForm />} />
                     <Route path="/my-plans" element={<MyPlans />} />
                     <Route path="/scheme" element={<SchemeOfWork />} />
-                    <Route path="/copy-notes" element={<CopyNoteGenerator />} />
+                    <Route path="/ai-notes" element={<CopyNoteGenerator />} />
                     <Route path="/templates" element={<Templates />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="*" element={<NotFound />} />
