@@ -398,7 +398,10 @@ export default function CopyNoteGenerator() {
       // Update chat view
       setMessages(prev => {
         const newMsgs = [...prev];
-        const lastAssistant = newMsgs.findLastIndex(m => m.role === 'assistant');
+        let lastAssistant = -1;
+        for (let i = newMsgs.length - 1; i >= 0; i--) {
+          if (newMsgs[i].role === 'assistant') { lastAssistant = i; break; }
+        }
         if (lastAssistant >= 0) newMsgs[lastAssistant] = { ...newMsgs[lastAssistant], content: versionContent };
         return newMsgs;
       });
