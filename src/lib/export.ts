@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { type LessonPlan, type SchemeOfWork, type AINote, getProfile } from './db';
+import { stripMarkdown, parseNoteToSections } from './note-formatter';
 
 export async function exportLessonPlanToPDF(plan: LessonPlan) {
   const profile = await getProfile();
