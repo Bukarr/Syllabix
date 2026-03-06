@@ -54,6 +54,16 @@ interface SchemeOfWork {
   createdAt: string;
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface NoteVersion {
+  content: string;
+  timestamp: string;
+}
+
 interface AINote {
   id: string;
   subject: string;
@@ -62,6 +72,9 @@ interface AINote {
   year: string;
   topic: string;
   content: string;
+  editedContent?: string;
+  conversations: ChatMessage[];
+  versions: NoteVersion[];
   status: 'draft' | 'saved';
   createdAt: string;
   updatedAt: string;
@@ -103,7 +116,7 @@ interface NaijaLessonDB extends DBSchema {
 }
 
 const DB_NAME = 'naijalesson-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export async function getDB() {
   return openDB<NaijaLessonDB>(DB_NAME, DB_VERSION, {
@@ -200,4 +213,4 @@ export async function deleteAINote(id: string): Promise<void> {
   await db.delete('aiNotes', id);
 }
 
-export type { TeacherProfile, LessonPlan, SchemeOfWork, AINote };
+export type { TeacherProfile, LessonPlan, SchemeOfWork, AINote, ChatMessage, NoteVersion };
