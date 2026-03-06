@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText } from 'lucide-react';
+import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText, Edit3, History, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,13 +9,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import ReactMarkdown from 'react-markdown';
-import { getProfile, getAllSOW, getAllAINotes, saveAINote, deleteAINote, type SchemeOfWork, type TeacherProfile, type AINote } from '@/lib/db';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getProfile, getAllSOW, getAllAINotes, saveAINote, deleteAINote, type SchemeOfWork, type TeacherProfile, type AINote, type ChatMessage } from '@/lib/db';
 import { exportAINoteToPDF, exportAINotesBulkToPDF } from '@/lib/export';
+import { parseNoteToSections, sectionsToPlainText, stripMarkdown } from '@/lib/note-formatter';
 import { CLASSES, SCHOOL_LEVELS, SUBJECTS, TERMS } from '@/lib/curriculum';
 import { toast } from 'sonner';
-
-type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/copy-note-chat`;
 
@@ -85,6 +84,35 @@ async function streamChat({
   onDone();
 }
 
+/** Renders parsed note sections as clean structured HTML */
+function CleanNoteDisplay({ content }: { content: string }) {
+  const sections = parseNoteToSections(content);
+  if (sections.length === 0) return <p className="text-sm text-muted-foreground">No content</p>;
+
+  return (
+    <div className="space-y-3">
+      {sections.map((s, i) => {
+        switch (s.type) {
+          case 'heading':
+            return <h2 key={i} className="text-base font-bold text-foreground uppercase tracking-wide">{s.content}</h2>;
+          case 'subheading':
+            return <h3 key={i} className="text-sm font-bold text-foreground mt-2">{s.content}</h3>;
+          case 'numbered-list':
+            return (
+              <ol key={i} className="list-decimal list-inside space-y-1 text-sm text-foreground pl-1">
+                {s.items?.map((item, j) => <li key={j}>{item}</li>)}
+              </ol>
+            );
+          case 'paragraph':
+          case 'text':
+          default:
+            return <p key={i} className="text-sm text-foreground leading-relaxed">{s.content}</p>;
+        }
+      })}
+    </div>
+  );
+}
+
 export default function CopyNoteGenerator() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [sows, setSows] = useState<SchemeOfWork[]>([]);
@@ -96,12 +124,22 @@ export default function CopyNoteGenerator() {
   const [setupDone, setSetupDone] = useState(false);
   const [activeTab, setActiveTab] = useState('generator');
 
+  // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentTopic, setCurrentTopic] = useState('');
+  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
   const [topicDrawerOpen, setTopicDrawerOpen] = useState(false);
+
+  // Editor state
+  const [editingContent, setEditingContent] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Version history dialog
+  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
+  const [versionNoteId, setVersionNoteId] = useState<string | null>(null);
 
   // Saved notes filters
   const [filterSubject, setFilterSubject] = useState('all');
@@ -133,7 +171,6 @@ export default function CopyNoteGenerator() {
   const filteredSOWs = sows.filter(s => s.subject === subject && (!classLevel || s.classLevel === classLevel || !s.classLevel));
   const allClasses = SCHOOL_LEVELS.flatMap(level => CLASSES[level] || []);
 
-  // Unique values for saved notes filters
   const uniqueSubjects = [...new Set(aiNotes.map(n => n.subject))];
   const uniqueClasses = [...new Set(aiNotes.map(n => n.classLevel))];
   const uniqueTerms = [...new Set(aiNotes.map(n => n.term))];
@@ -148,7 +185,6 @@ export default function CopyNoteGenerator() {
     return true;
   }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  // Group notes by subject > class > term
   const groupedNotes: Record<string, AINote[]> = {};
   filteredNotes.forEach(n => {
     const key = `${n.subject} · ${n.classLevel} · Term ${n.term} · ${n.year}`;
@@ -160,6 +196,9 @@ export default function CopyNoteGenerator() {
     if (!classLevel || !subject) { toast.error('Please select both class level and subject'); return; }
     setSetupDone(true);
     setMessages([]);
+    setCurrentNoteId(null);
+    setIsEditing(false);
+    setEditingContent('');
   };
 
   const sendMessage = useCallback(async (text: string) => {
@@ -188,28 +227,52 @@ export default function CopyNoteGenerator() {
         onDelta: updateAssistant,
         onDone: async () => {
           setIsStreaming(false);
-          // Auto-save as draft
           if (assistantContent.trim()) {
             const topicMatch = text.match(/topic:\s*"([^"]+)"/i);
             const topic = topicMatch ? topicMatch[1] : currentTopic || text.slice(0, 80);
             const currentYear = new Date().getFullYear().toString();
             const currentSOW = filteredSOWs[0];
-            const note: AINote = {
-              id: crypto.randomUUID(),
-              subject,
-              classLevel,
-              term: currentSOW?.term || 1,
-              year: currentSOW?.year || `${currentYear}/${Number(currentYear) + 1}`,
-              topic,
-              content: assistantContent,
-              status: 'draft',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            await saveAINote(note);
-            const notes = await getAllAINotes();
-            setAiNotes(notes);
-            toast.success('Note saved as draft');
+            const now = new Date().toISOString();
+            const finalMessages: ChatMessage[] = [...newMessages, { role: 'assistant', content: assistantContent }];
+
+            if (currentNoteId) {
+              // Update existing note with new conversation + version
+              const existing = aiNotes.find(n => n.id === currentNoteId);
+              if (existing) {
+                const updatedNote: AINote = {
+                  ...existing,
+                  content: assistantContent,
+                  conversations: finalMessages,
+                  versions: [...(existing.versions || []), { content: assistantContent, timestamp: now }],
+                  updatedAt: now,
+                };
+                await saveAINote(updatedNote);
+                const notes = await getAllAINotes();
+                setAiNotes(notes);
+              }
+            } else {
+              // Create new draft
+              const noteId = crypto.randomUUID();
+              const note: AINote = {
+                id: noteId,
+                subject,
+                classLevel,
+                term: currentSOW?.term || 1,
+                year: currentSOW?.year || `${currentYear}/${Number(currentYear) + 1}`,
+                topic,
+                content: assistantContent,
+                conversations: finalMessages,
+                versions: [{ content: assistantContent, timestamp: now }],
+                status: 'draft',
+                createdAt: now,
+                updatedAt: now,
+              };
+              await saveAINote(note);
+              setCurrentNoteId(noteId);
+              const notes = await getAllAINotes();
+              setAiNotes(notes);
+              toast.success('Note saved as draft');
+            }
           }
         },
         onError: (err) => { toast.error(err); setIsStreaming(false); },
@@ -218,11 +281,12 @@ export default function CopyNoteGenerator() {
       toast.error(e.message || 'Failed to generate note');
       setIsStreaming(false);
     }
-  }, [messages, isStreaming, classLevel, subject, currentTopic, filteredSOWs]);
+  }, [messages, isStreaming, classLevel, subject, currentTopic, filteredSOWs, currentNoteId, aiNotes]);
 
   const handleTopicClick = (topic: string, subTopic?: string) => {
     const prompt = `Generate a student copy note for the topic: "${topic}"${subTopic ? ` — Sub-topic: "${subTopic}"` : ''}`;
     setCurrentTopic(topic);
+    setCurrentNoteId(null);
     setTopicDrawerOpen(false);
     sendMessage(prompt);
   };
@@ -230,7 +294,8 @@ export default function CopyNoteGenerator() {
   const handleCopyNote = (index: number) => {
     const msg = messages[index];
     if (!msg) return;
-    navigator.clipboard.writeText(msg.content);
+    const cleanText = sectionsToPlainText(parseNoteToSections(msg.content));
+    navigator.clipboard.writeText(cleanText);
     setCopied(index);
     setTimeout(() => setCopied(null), 2000);
     toast.success('Copied to clipboard!');
@@ -239,22 +304,21 @@ export default function CopyNoteGenerator() {
   const handleSaveNote = async (index: number) => {
     const msg = messages[index];
     if (!msg || msg.role !== 'assistant') return;
-    // Find matching draft and mark as saved
-    const matchingNote = aiNotes.find(n => n.content === msg.content && n.status === 'draft');
+    const matchingNote = aiNotes.find(n => n.id === currentNoteId || (n.content === msg.content && n.status === 'draft'));
     if (matchingNote) {
       await saveAINote({ ...matchingNote, status: 'saved', updatedAt: new Date().toISOString() });
       const notes = await getAllAINotes();
       setAiNotes(notes);
       toast.success('Note saved!');
     } else {
-      toast.info('Note already saved or not found as draft');
+      toast.info('Note not found');
     }
   };
 
   const handleDownloadNote = async (index: number) => {
     const msg = messages[index];
     if (!msg || msg.role !== 'assistant') return;
-    const matchingNote = aiNotes.find(n => n.content === msg.content);
+    const matchingNote = aiNotes.find(n => n.id === currentNoteId || n.content === msg.content);
     if (matchingNote) {
       await exportAINoteToPDF(matchingNote);
       toast.success('PDF downloaded!');
@@ -268,17 +332,6 @@ export default function CopyNoteGenerator() {
     toast.success('Note deleted');
   };
 
-  const handleDownloadSavedNote = async (note: AINote) => {
-    await exportAINoteToPDF(note);
-    toast.success('PDF downloaded!');
-  };
-
-  const handleBulkDownload = async () => {
-    if (filteredNotes.length === 0) { toast.error('No notes to download'); return; }
-    await exportAINotesBulkToPDF(filteredNotes);
-    toast.success(`Downloaded ${filteredNotes.length} notes as PDF`);
-  };
-
   const handleRegenerate = () => {
     if (messages.length < 2) return;
     const lastUserIdx = [...messages].reverse().findIndex(m => m.role === 'user');
@@ -287,6 +340,74 @@ export default function CopyNoteGenerator() {
     const trimmed = messages.slice(0, messages.length - 1 - lastUserIdx);
     setMessages(trimmed);
     setTimeout(() => sendMessage(lastUserMsg.content), 100);
+  };
+
+  const handleOpenNote = (note: AINote) => {
+    setClassLevel(note.classLevel);
+    setSubject(note.subject);
+    setCurrentNoteId(note.id);
+    setCurrentTopic(note.topic);
+    setMessages(note.conversations?.length ? note.conversations : [
+      { role: 'user', content: `Generate a student copy note for the topic: "${note.topic}"` },
+      { role: 'assistant', content: note.editedContent || note.content },
+    ]);
+    setIsEditing(false);
+    setEditingContent('');
+    setSetupDone(true);
+    setActiveTab('generator');
+  };
+
+  const handleStartEditing = (content: string) => {
+    setEditingContent(stripMarkdown(content));
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!currentNoteId) return;
+    const note = aiNotes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    const now = new Date().toISOString();
+    const updated: AINote = {
+      ...note,
+      editedContent: editingContent,
+      versions: [...(note.versions || []), { content: editingContent, timestamp: now }],
+      updatedAt: now,
+    };
+    await saveAINote(updated);
+    const notes = await getAllAINotes();
+    setAiNotes(notes);
+    setIsEditing(false);
+    toast.success('Edits saved!');
+  };
+
+  const handleRevertVersion = async (noteId: string, versionContent: string) => {
+    const note = aiNotes.find(n => n.id === noteId);
+    if (!note) return;
+    const now = new Date().toISOString();
+    const updated: AINote = {
+      ...note,
+      editedContent: versionContent,
+      content: versionContent,
+      versions: [...(note.versions || []), { content: versionContent, timestamp: now }],
+      updatedAt: now,
+    };
+    await saveAINote(updated);
+    const notes = await getAllAINotes();
+    setAiNotes(notes);
+    if (currentNoteId === noteId) {
+      // Update chat view
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        let lastAssistant = -1;
+        for (let i = newMsgs.length - 1; i >= 0; i--) {
+          if (newMsgs[i].role === 'assistant') { lastAssistant = i; break; }
+        }
+        if (lastAssistant >= 0) newMsgs[lastAssistant] = { ...newMsgs[lastAssistant], content: versionContent };
+        return newMsgs;
+      });
+    }
+    setVersionDialogOpen(false);
+    toast.success('Reverted to selected version');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -353,91 +474,112 @@ export default function CopyNoteGenerator() {
 
           <TabsContent value="saved" className="mt-4">
             <SavedNotesView
-              aiNotes={aiNotes}
-              groupedNotes={groupedNotes}
-              filteredNotes={filteredNotes}
-              uniqueSubjects={uniqueSubjects}
-              uniqueClasses={uniqueClasses}
-              uniqueTerms={uniqueTerms}
-              uniqueYears={uniqueYears}
+              aiNotes={aiNotes} groupedNotes={groupedNotes} filteredNotes={filteredNotes}
+              uniqueSubjects={uniqueSubjects} uniqueClasses={uniqueClasses}
+              uniqueTerms={uniqueTerms} uniqueYears={uniqueYears}
               filterSubject={filterSubject} setFilterSubject={setFilterSubject}
               filterClass={filterClass} setFilterClass={setFilterClass}
               filterTerm={filterTerm} setFilterTerm={setFilterTerm}
               filterYear={filterYear} setFilterYear={setFilterYear}
               filterStatus={filterStatus} setFilterStatus={setFilterStatus}
               onDelete={handleDeleteNote}
-              onDownload={handleDownloadSavedNote}
-              onBulkDownload={handleBulkDownload}
+              onDownload={async (note) => { await exportAINoteToPDF(note); toast.success('PDF downloaded!'); }}
+              onBulkDownload={async () => {
+                if (filteredNotes.length === 0) { toast.error('No notes to download'); return; }
+                await exportAINotesBulkToPDF(filteredNotes);
+                toast.success(`Downloaded ${filteredNotes.length} notes as PDF`);
+              }}
               onSaveStatus={async (note, status) => {
                 await saveAINote({ ...note, status, updatedAt: new Date().toISOString() });
                 const notes = await getAllAINotes();
                 setAiNotes(notes);
                 toast.success(status === 'saved' ? 'Note saved!' : 'Moved to drafts');
               }}
+              onOpen={handleOpenNote}
+              onViewVersions={(noteId) => { setVersionNoteId(noteId); setVersionDialogOpen(true); }}
             />
           </TabsContent>
         </Tabs>
+
+        {/* Version History Dialog */}
+        <VersionHistoryDialog
+          open={versionDialogOpen}
+          onOpenChange={setVersionDialogOpen}
+          note={aiNotes.find(n => n.id === versionNoteId) || null}
+          onRevert={handleRevertVersion}
+        />
       </div>
     );
   }
 
-  // Chat interface
+  // Chat interface with editor
+  const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)]">
+      {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={() => { setSetupDone(false); setMessages([]); }} className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Back</button>
+          <button onClick={() => { setSetupDone(false); setMessages([]); setCurrentNoteId(null); setIsEditing(false); }} className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Back</button>
           <div className="flex gap-1.5 overflow-hidden">
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium truncate">{classLevel}</span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/15 text-secondary-foreground font-medium truncate">{subject}</span>
           </div>
         </div>
-        <Sheet open={topicDrawerOpen} onOpenChange={setTopicDrawerOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="shrink-0"><BookOpen className="h-4 w-4 mr-1" />Topics</Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[85vw] sm:w-[400px] p-0">
-            <SheetHeader className="p-4 border-b border-border">
-              <SheetTitle className="text-left font-heading">Quick Topics</SheetTitle>
-              <p className="text-xs text-muted-foreground text-left">Tap any topic to generate a copy note instantly</p>
-            </SheetHeader>
-            <ScrollArea className="h-[calc(100vh-8rem)]">
-              <div className="p-4 space-y-3">
-                {filteredSOWs.length === 0 ? (
-                  <div className="text-center py-8">
-                    <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No schemes found for {subject} ({classLevel}).</p>
-                    <p className="text-xs text-muted-foreground mt-1">Create a Scheme of Work first to use quick topics.</p>
-                  </div>
-                ) : (
-                  filteredSOWs.map(sow => (
-                    <div key={sow.id} className="space-y-1.5">
-                      <p className="text-xs text-muted-foreground font-medium px-1">Term {sow.term} · {sow.year}</p>
-                      {sow.weeks.map(week => {
-                        if (!week.topic) return null;
-                        return (
-                          <button key={week.week} onClick={() => handleTopicClick(week.topic, week.subTopic)} disabled={isStreaming}
-                            className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left group disabled:opacity-50">
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <span className="text-[10px] font-bold text-primary">W{week.week}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{week.topic}</p>
-                              {week.subTopic && <p className="text-xs text-muted-foreground truncate">{week.subTopic}</p>}
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                          </button>
-                        );
-                      })}
+        <div className="flex items-center gap-1">
+          {currentNoteId && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setVersionNoteId(currentNoteId); setVersionDialogOpen(true); }}>
+              <History className="h-3.5 w-3.5 mr-1" />Versions
+            </Button>
+          )}
+          <Sheet open={topicDrawerOpen} onOpenChange={setTopicDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="shrink-0"><BookOpen className="h-4 w-4 mr-1" />Topics</Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[85vw] sm:w-[400px] p-0">
+              <SheetHeader className="p-4 border-b border-border">
+                <SheetTitle className="text-left font-heading">Quick Topics</SheetTitle>
+                <p className="text-xs text-muted-foreground text-left">Tap any topic to generate a copy note instantly</p>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(100vh-8rem)]">
+                <div className="p-4 space-y-3">
+                  {filteredSOWs.length === 0 ? (
+                    <div className="text-center py-8">
+                      <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">No schemes found for {subject} ({classLevel}).</p>
+                      <p className="text-xs text-muted-foreground mt-1">Create a Scheme of Work first to use quick topics.</p>
                     </div>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
+                  ) : (
+                    filteredSOWs.map(sow => (
+                      <div key={sow.id} className="space-y-1.5">
+                        <p className="text-xs text-muted-foreground font-medium px-1">Term {sow.term} · {sow.year}</p>
+                        {sow.weeks.map(week => {
+                          if (!week.topic) return null;
+                          return (
+                            <button key={week.week} onClick={() => handleTopicClick(week.topic, week.subTopic)} disabled={isStreaming}
+                              className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left group disabled:opacity-50">
+                              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <span className="text-[10px] font-bold text-primary">W{week.week}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{week.topic}</p>
+                                {week.subTopic && <p className="text-xs text-muted-foreground truncate">{week.subTopic}</p>}
+                              </div>
+                              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
+      {/* Main content area */}
       <ScrollArea className="flex-1 px-4">
         <div className="py-4 space-y-4">
           {messages.length === 0 && (
@@ -447,17 +589,33 @@ export default function CopyNoteGenerator() {
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">Type a topic below or tap <strong>Topics</strong> to pick from your scheme of work</p>
             </div>
           )}
+
           {messages.map((msg, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[90%] rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted/60 text-foreground rounded-bl-md border border-border'}`}>
+              <div className={`max-w-[95%] rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted/60 text-foreground rounded-bl-md border border-border'}`}>
                 {msg.role === 'assistant' ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
+                  isEditing && i === messages.length - 1 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Editing Note</span>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setIsEditing(false)}>Cancel</Button>
+                          <Button size="sm" className="h-7 text-xs" onClick={handleSaveEdit}>Save Edits</Button>
+                        </div>
+                      </div>
+                      <textarea
+                        value={editingContent}
+                        onChange={e => setEditingContent(e.target.value)}
+                        className="w-full min-h-[300px] text-sm bg-background border border-border rounded-lg p-3 focus:ring-2 focus:ring-primary focus:outline-none resize-y font-mono leading-relaxed"
+                      />
+                    </div>
+                  ) : (
+                    <CleanNoteDisplay content={msg.content} />
+                  )
                 ) : (
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 )}
-                {msg.role === 'assistant' && !isStreaming && (
+                {msg.role === 'assistant' && !isStreaming && !isEditing && (
                   <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-border/50">
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleCopyNote(i)}>
                       {copied === i ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
@@ -469,6 +627,9 @@ export default function CopyNoteGenerator() {
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleDownloadNote(i)}>
                       <Download className="h-3 w-3 mr-1" />PDF
                     </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleStartEditing(msg.content)}>
+                      <Edit3 className="h-3 w-3 mr-1" />Edit
+                    </Button>
                     {i === messages.length - 1 && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={handleRegenerate}>
                         <RefreshCw className="h-3 w-3 mr-1" />Regenerate
@@ -479,6 +640,7 @@ export default function CopyNoteGenerator() {
               </div>
             </motion.div>
           ))}
+
           {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
             <div className="flex justify-start">
               <div className="bg-muted/60 rounded-2xl rounded-bl-md px-4 py-3 border border-border">
@@ -490,27 +652,98 @@ export default function CopyNoteGenerator() {
         </div>
       </ScrollArea>
 
+      {/* Chat input */}
       <div className="px-4 py-3 border-t border-border bg-card/95 backdrop-blur-md safe-bottom">
         <div className="flex gap-2 items-end">
           <Textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
-            placeholder="Type a topic or follow-up instruction..."
+            placeholder={isEditing ? "Ask AI to improve your note..." : "Type a topic or follow-up instruction..."}
             className="min-h-[44px] max-h-[120px] resize-none touch-target flex-1" rows={1} disabled={isStreaming} />
           <Button onClick={() => sendMessage(input)} disabled={!input.trim() || isStreaming} className="touch-target shrink-0 h-11 w-11 p-0">
             {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
       </div>
+
+      {/* Version History Dialog */}
+      <VersionHistoryDialog
+        open={versionDialogOpen}
+        onOpenChange={setVersionDialogOpen}
+        note={aiNotes.find(n => n.id === versionNoteId) || null}
+        onRevert={handleRevertVersion}
+      />
     </div>
   );
 }
 
-// Saved Notes sub-component
+/* ─── Version History Dialog ─── */
+function VersionHistoryDialog({ open, onOpenChange, note, onRevert }: {
+  open: boolean; onOpenChange: (v: boolean) => void; note: AINote | null;
+  onRevert: (noteId: string, content: string) => void;
+}) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  if (!note) return null;
+  const versions = note.versions || [];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="font-heading">Version History</DialogTitle>
+          <p className="text-xs text-muted-foreground">{note.topic} — {versions.length} version(s)</p>
+        </DialogHeader>
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-2 py-2">
+            {versions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No versions saved yet</p>
+            ) : (
+              versions.slice().reverse().map((v, i) => {
+                const realIdx = versions.length - 1 - i;
+                const isExpanded = expandedIdx === realIdx;
+                return (
+                  <div key={realIdx} className="border border-border rounded-lg overflow-hidden">
+                    <button onClick={() => setExpandedIdx(isExpanded ? null : realIdx)}
+                      className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/30 transition-colors">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Version {realIdx + 1}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(v.timestamp).toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {realIdx === versions.length - 1 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">Current</span>
+                        )}
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </div>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-3 pb-3 border-t border-border">
+                        <div className="mt-2 p-2 rounded bg-muted/30 max-h-40 overflow-auto">
+                          <p className="text-xs text-foreground whitespace-pre-wrap line-clamp-[12]">{stripMarkdown(v.content).slice(0, 500)}...</p>
+                        </div>
+                        {realIdx !== versions.length - 1 && (
+                          <Button variant="outline" size="sm" className="mt-2 text-xs w-full" onClick={() => onRevert(note.id, v.content)}>
+                            <History className="h-3 w-3 mr-1" />Revert to this version
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─── Saved Notes View ─── */
 function SavedNotesView({
   aiNotes, groupedNotes, filteredNotes, uniqueSubjects, uniqueClasses, uniqueTerms, uniqueYears,
   filterSubject, setFilterSubject, filterClass, setFilterClass,
   filterTerm, setFilterTerm, filterYear, setFilterYear,
   filterStatus, setFilterStatus,
-  onDelete, onDownload, onBulkDownload, onSaveStatus,
+  onDelete, onDownload, onBulkDownload, onSaveStatus, onOpen, onViewVersions,
 }: {
   aiNotes: AINote[];
   groupedNotes: Record<string, AINote[]>;
@@ -525,6 +758,8 @@ function SavedNotesView({
   onDownload: (note: AINote) => void;
   onBulkDownload: () => void;
   onSaveStatus: (note: AINote, status: 'draft' | 'saved') => void;
+  onOpen: (note: AINote) => void;
+  onViewVersions: (noteId: string) => void;
 }) {
   if (aiNotes.length === 0) {
     return (
@@ -595,18 +830,24 @@ function SavedNotesView({
               {notes.map(note => (
                 <div key={note.id} className="p-3 rounded-lg border border-border bg-card/50 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
+                    <button onClick={() => onOpen(note)} className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity">
                       <p className="text-sm font-medium text-foreground truncate">{note.topic}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${note.status === 'saved' ? 'bg-primary/15 text-primary' : 'bg-secondary/15 text-secondary-foreground'}`}>
                           {note.status === 'saved' ? 'Saved' : 'Draft'}
                         </span>
                         <span className="text-[10px] text-muted-foreground">{new Date(note.createdAt).toLocaleDateString()}</span>
+                        {(note.versions?.length || 0) > 1 && (
+                          <span className="text-[10px] text-muted-foreground">· {note.versions.length} versions</span>
+                        )}
                       </div>
-                    </div>
+                    </button>
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{note.content.slice(0, 150)}...</p>
-                  <div className="flex gap-1.5 pt-1">
+                  <p className="text-xs text-muted-foreground line-clamp-2">{stripMarkdown((note.editedContent || note.content) || '').slice(0, 150)}...</p>
+                  <div className="flex gap-1.5 pt-1 flex-wrap">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onOpen(note)}>
+                      <Edit3 className="h-3 w-3 mr-1" />Open
+                    </Button>
                     {note.status === 'draft' ? (
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onSaveStatus(note, 'saved')}>
                         <Save className="h-3 w-3 mr-1" />Save
@@ -619,6 +860,11 @@ function SavedNotesView({
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDownload(note)}>
                       <Download className="h-3 w-3 mr-1" />PDF
                     </Button>
+                    {(note.versions?.length || 0) > 1 && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onViewVersions(note.id)}>
+                        <History className="h-3 w-3 mr-1" />History
+                      </Button>
+                    )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:text-destructive">
