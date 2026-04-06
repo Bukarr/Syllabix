@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText, Edit3, History, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText, Edit3, History, ChevronDown, ChevronUp, Eye, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -325,6 +325,28 @@ export default function CopyNoteGenerator() {
     }
   };
 
+  const handleShareNote = async (content: string, topic?: string) => {
+    const cleanText = sectionsToPlainText(parseNoteToSections(content));
+    const shareData = {
+      title: topic ? `Copy Note: ${topic}` : 'Student Copy Note',
+      text: cleanText,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        toast.success('Note shared!');
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          await navigator.clipboard.writeText(cleanText);
+          toast.success('Copied to clipboard for sharing!');
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(cleanText);
+      toast.success('Copied to clipboard for sharing!');
+    }
+  };
+
   const handleDeleteNote = async (id: string) => {
     await deleteAINote(id);
     const notes = await getAllAINotes();
@@ -496,6 +518,7 @@ export default function CopyNoteGenerator() {
                 toast.success(status === 'saved' ? 'Note saved!' : 'Moved to drafts');
               }}
               onOpen={handleOpenNote}
+              onShare={(note) => handleShareNote(note.editedContent || note.content, note.topic)}
               onViewVersions={(noteId) => { setVersionNoteId(noteId); setVersionDialogOpen(true); }}
             />
           </TabsContent>
@@ -630,6 +653,9 @@ export default function CopyNoteGenerator() {
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleStartEditing(msg.content)}>
                       <Edit3 className="h-3 w-3 mr-1" />Edit
                     </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleShareNote(msg.content, currentTopic)}>
+                      <Share2 className="h-3 w-3 mr-1" />Share
+                    </Button>
                     {i === messages.length - 1 && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={handleRegenerate}>
                         <RefreshCw className="h-3 w-3 mr-1" />Regenerate
@@ -743,7 +769,7 @@ function SavedNotesView({
   filterSubject, setFilterSubject, filterClass, setFilterClass,
   filterTerm, setFilterTerm, filterYear, setFilterYear,
   filterStatus, setFilterStatus,
-  onDelete, onDownload, onBulkDownload, onSaveStatus, onOpen, onViewVersions,
+  onDelete, onDownload, onBulkDownload, onSaveStatus, onOpen, onShare, onViewVersions,
 }: {
   aiNotes: AINote[];
   groupedNotes: Record<string, AINote[]>;
@@ -759,6 +785,7 @@ function SavedNotesView({
   onBulkDownload: () => void;
   onSaveStatus: (note: AINote, status: 'draft' | 'saved') => void;
   onOpen: (note: AINote) => void;
+  onShare: (note: AINote) => void;
   onViewVersions: (noteId: string) => void;
 }) {
   if (aiNotes.length === 0) {
@@ -859,6 +886,9 @@ function SavedNotesView({
                     )}
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDownload(note)}>
                       <Download className="h-3 w-3 mr-1" />PDF
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onShare(note)}>
+                      <Share2 className="h-3 w-3 mr-1" />Share
                     </Button>
                     {(note.versions?.length || 0) > 1 && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onViewVersions(note.id)}>

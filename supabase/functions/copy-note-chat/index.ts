@@ -45,7 +45,8 @@ RULES:
   3. KEY POINTS explained in simple language with numbering
   4. At least one EXAMPLE or worked problem (with step-by-step solution where applicable)
   5. A SUMMARY (3-5 bullet points of the most important things to remember)
-- Use markdown formatting: headings (#, ##), bold (**), numbered lists, bullet points.
+- DO NOT use any markdown formatting. No asterisks (*), no hashtags (#), no underscores (_), no backticks, no em dashes (—), no bullet symbols (•).
+- Use PLAIN TEXT only. Write headings in UPPERCASE on their own line. Use numbered lists (1. 2. 3.) for key points. Use blank lines between sections for spacing.
 - If asked to revise, modify, shorten, or expand — do so while maintaining the copy note structure.
 - Do NOT mention AI, curriculum documents, or internal reasoning.
 - Do NOT use overly complex vocabulary inappropriate for the class level.

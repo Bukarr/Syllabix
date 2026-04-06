@@ -20,13 +20,16 @@ export function stripMarkdown(text: string): string {
   // Remove markdown headings but keep the text
   cleaned = cleaned.replace(/^#{1,6}\s+(.+)$/gm, '$1');
   
-  // Remove bold/italic markers
+  // Remove bold/italic markers (greedy — catch orphaned asterisks too)
   cleaned = cleaned.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
   cleaned = cleaned.replace(/\*\*(.+?)\*\*/g, '$1');
   cleaned = cleaned.replace(/\*(.+?)\*/g, '$1');
   cleaned = cleaned.replace(/___(.+?)___/g, '$1');
   cleaned = cleaned.replace(/__(.+?)__/g, '$1');
   cleaned = cleaned.replace(/_(.+?)_/g, '$1');
+  
+  // Remove any remaining standalone asterisks (orphaned bold/italic)
+  cleaned = cleaned.replace(/\*+/g, '');
   
   // Remove em dashes at line start (list-like)
   cleaned = cleaned.replace(/^—\s*/gm, '');
@@ -163,6 +166,8 @@ function stripInlineMarkdown(text: string): string {
   s = s.replace(/_(.+?)_/g, '$1');
   s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   s = s.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
+  // Remove any remaining orphaned asterisks
+  s = s.replace(/\*+/g, '');
   return s;
 }
 
