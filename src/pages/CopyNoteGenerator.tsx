@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText, Edit3, History, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText, Edit3, History, ChevronDown, ChevronUp, Eye, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
