@@ -652,6 +652,9 @@ export default function CopyNoteGenerator() {
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleStartEditing(msg.content)}>
                       <Edit3 className="h-3 w-3 mr-1" />Edit
                     </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleShareNote(msg.content, currentTopic)}>
+                      <Share2 className="h-3 w-3 mr-1" />Share
+                    </Button>
                     {i === messages.length - 1 && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={handleRegenerate}>
                         <RefreshCw className="h-3 w-3 mr-1" />Regenerate
