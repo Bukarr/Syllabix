@@ -518,6 +518,7 @@ export default function CopyNoteGenerator() {
                 toast.success(status === 'saved' ? 'Note saved!' : 'Moved to drafts');
               }}
               onOpen={handleOpenNote}
+              onShare={(note) => handleShareNote(note.editedContent || note.content, note.topic)}
               onViewVersions={(noteId) => { setVersionNoteId(noteId); setVersionDialogOpen(true); }}
             />
           </TabsContent>
@@ -768,7 +769,7 @@ function SavedNotesView({
   filterSubject, setFilterSubject, filterClass, setFilterClass,
   filterTerm, setFilterTerm, filterYear, setFilterYear,
   filterStatus, setFilterStatus,
-  onDelete, onDownload, onBulkDownload, onSaveStatus, onOpen, onViewVersions,
+  onDelete, onDownload, onBulkDownload, onSaveStatus, onOpen, onShare, onViewVersions,
 }: {
   aiNotes: AINote[];
   groupedNotes: Record<string, AINote[]>;
@@ -784,6 +785,7 @@ function SavedNotesView({
   onBulkDownload: () => void;
   onSaveStatus: (note: AINote, status: 'draft' | 'saved') => void;
   onOpen: (note: AINote) => void;
+  onShare: (note: AINote) => void;
   onViewVersions: (noteId: string) => void;
 }) {
   if (aiNotes.length === 0) {
@@ -884,6 +886,9 @@ function SavedNotesView({
                     )}
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDownload(note)}>
                       <Download className="h-3 w-3 mr-1" />PDF
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onShare(note)}>
+                      <Share2 className="h-3 w-3 mr-1" />Share
                     </Button>
                     {(note.versions?.length || 0) > 1 && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onViewVersions(note.id)}>
