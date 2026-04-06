@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Save, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,11 +9,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
 import { toast } from 'sonner';
 import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
+import { VoiceInput } from '@/components/VoiceInput';
+import { AssessmentGenerator } from '@/components/AssessmentGenerator';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 
 const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
 
+const GENERATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-lesson`;
+
 export default function LessonPlanForm() {
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [step, setStep] = useState(0);
@@ -38,6 +44,13 @@ export default function LessonPlanForm() {
     status: 'draft',
   });
 
+  // AI generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [curriculumPosition, setCurriculumPosition] = useState('');
+  
+  // Assessment modal
+  const [showAssessment, setShowAssessment] = useState(false);
+
   useEffect(() => {
     Promise.all([getProfile(), getAllSOW(), getAllLessonPlans()]).then(([p, s, plans]) => {
       if (p) setProfile(p);
@@ -49,7 +62,7 @@ export default function LessonPlanForm() {
     });
   }, [editId]);
 
-  // Auto-fill topic/subTopic/objectives from matching SOW when subject, classLevel, term, or week changes
+  // Auto-fill from SOW
   useEffect(() => {
     if (!plan.subject || !plan.classLevel || !plan.term || !plan.week) return;
     const matchingSOW = sows.find(
@@ -67,6 +80,16 @@ export default function LessonPlanForm() {
       }));
     }
   }, [plan.subject, plan.classLevel, plan.term, plan.week, sows]);
+
+  // Update curriculum position display
+  useEffect(() => {
+    if (plan.subject && plan.classLevel && plan.term && plan.week) {
+      const termLabel = plan.term === 1 ? '1st' : plan.term === 2 ? '2nd' : '3rd';
+      setCurriculumPosition(`Week ${plan.week}, ${termLabel} Term content for ${plan.classLevel} ${plan.subject}`);
+    } else {
+      setCurriculumPosition('');
+    }
+  }, [plan.subject, plan.classLevel, plan.term, plan.week]);
 
   const updatePlan = (field: string, value: any) => {
     setPlan(p => ({ ...p, [field]: value }));
@@ -97,6 +120,67 @@ export default function LessonPlanForm() {
       newObj[index] = value;
       return { ...p, objectives: newObj };
     });
+  };
+
+  const handleAIGenerate = async () => {
+    if (!plan.subject || !plan.classLevel || !plan.topic) {
+      toast.error('Please fill in subject, class level, and topic first');
+      return;
+    }
+    if (!isOnline) {
+      toast.error('Internet connection required for AI generation');
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const resp = await fetch(GENERATE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          subject: plan.subject,
+          classLevel: plan.classLevel,
+          topic: plan.topic,
+          subTopic: plan.subTopic,
+          term: plan.term,
+          week: plan.week,
+          resources: plan.materials,
+        }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Generation failed' }));
+        throw new Error(err.error || `Error ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      setPlan(prev => ({
+        ...prev,
+        objectives: data.objectives || prev.objectives,
+        entryBehaviour: data.entryBehaviour || prev.entryBehaviour,
+        materials: data.materials || prev.materials,
+        references: data.references || prev.references,
+        steps: data.steps || prev.steps,
+        evaluation: data.evaluation || prev.evaluation,
+        assignment: data.assignment || prev.assignment,
+      }));
+      if (data.curriculumPosition) {
+        setCurriculumPosition(data.curriculumPosition);
+      }
+      toast.success('Lesson note generated! Review and edit as needed.');
+      setStep(1);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to generate lesson note');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleVoiceTranscription = (text: string) => {
+    updatePlan('topic', text);
+    toast.success('Topic set from voice input');
   };
 
   const handleSave = async (status: 'draft' | 'complete' = 'draft') => {
@@ -183,6 +267,15 @@ export default function LessonPlanForm() {
         {step === 0 && (
           <>
             <h2 className="text-xl font-heading font-bold">Lesson Details</h2>
+
+            {/* Curriculum Position Banner */}
+            {curriculumPosition && (
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-primary/20 bg-primary/5">
+                <MapPin className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs text-primary font-medium">{curriculumPosition}</p>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Subject</Label>
@@ -220,7 +313,7 @@ export default function LessonPlanForm() {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Week</Label>
+                  <Label className="text-sm font-medium">Week (1–13)</Label>
                   <Input
                     type="number"
                     min={1} max={13}
@@ -239,6 +332,10 @@ export default function LessonPlanForm() {
                   onChange={e => updatePlan('topic', e.target.value)}
                   className="mt-1.5 touch-target"
                 />
+                {/* Voice Input */}
+                <div className="mt-2">
+                  <VoiceInput onTranscriptionReady={handleVoiceTranscription} disabled={isGenerating} />
+                </div>
               </div>
               <div>
                 <Label className="text-sm font-medium">Sub-topic</Label>
@@ -250,9 +347,6 @@ export default function LessonPlanForm() {
                   className="mt-1.5 touch-target"
                 />
               </div>
-
-
-
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -273,6 +367,32 @@ export default function LessonPlanForm() {
                   />
                 </div>
               </div>
+
+              {/* AI Generate Button */}
+              {plan.subject && plan.topic && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  {!isOnline && (
+                    <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-muted/50 border border-border">
+                      <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
+                      <p className="text-[11px] text-muted-foreground">AI generation requires internet connection</p>
+                    </div>
+                  )}
+                  <Button
+                    onClick={handleAIGenerate}
+                    disabled={isGenerating || !isOnline}
+                    className="w-full touch-target font-semibold"
+                    variant="outline"
+                    size="lg"
+                  >
+                    {isGenerating ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating with AI...</>
+                    ) : (
+                      <><BookOpen className="h-4 w-4 mr-2" />Generate with AI</>
+                    )}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground text-center mt-1">AI-generated content. Review before use in class.</p>
+                </motion.div>
+              )}
             </div>
           </>
         )}
@@ -402,6 +522,19 @@ export default function LessonPlanForm() {
                   rows={3}
                 />
               </div>
+
+              {/* Assessment Generator Button */}
+              {plan.topic && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAssessment(true)}
+                  className="w-full touch-target"
+                  size="lg"
+                >
+                  <FileQuestion className="h-4 w-4 mr-2" />
+                  Generate Assessment for This Lesson
+                </Button>
+              )}
             </div>
           </>
         )}
@@ -431,6 +564,16 @@ export default function LessonPlanForm() {
           )}
         </div>
       </div>
+
+      {/* Assessment Generator Modal */}
+      <AssessmentGenerator
+        open={showAssessment}
+        onOpenChange={setShowAssessment}
+        subject={plan.subject || ''}
+        classLevel={plan.classLevel || ''}
+        topic={plan.topic || ''}
+        subTopic={plan.subTopic}
+      />
     </div>
   );
 }
