@@ -24,9 +24,20 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are an expert Nigerian teacher and curriculum specialist with deep knowledge of the NERDC-approved curriculum for all levels (Primary, Junior Secondary, Senior Secondary).
+    const termLabel = term === 1 ? "1st" : term === 2 ? "2nd" : "3rd";
+    const curriculumPosition = `Week ${week || 1}, ${termLabel} Term content for ${classLevel} ${subject}`;
+
+    const systemPrompt = `You are an expert Nigerian teacher and curriculum specialist with deep knowledge of the NERDC-approved curriculum and UBE scope and sequence for all levels (Primary, Junior Secondary, Senior Secondary).
 
 Your task is to generate a complete LESSON COPY NOTE — the note that pupils will copy into their exercise books during the lesson. This is NOT a lesson plan for the teacher; it is the actual content pupils write down.
+
+CURRICULUM INTELLIGENCE:
+- This lesson is positioned at: ${curriculumPosition}
+- You MUST be aware of the curriculum sequence for ${subject} at ${classLevel} level
+- The content must match the expected scope for Week ${week || 1} of ${termLabel} Term
+- Reference the UBE scope and sequence to ensure topic ordering is correct
+- If this is an early-term topic, introduce foundational concepts; if mid or late term, build on prior knowledge
+- Consider what topics came before this week and what comes after in the NERDC sequence
 
 RULES:
 - Align all content strictly to the given topic, subject, and class level
@@ -43,6 +54,7 @@ RULES:
 
 OUTPUT FORMAT — Return a valid JSON object with these exact keys:
 {
+  "curriculumPosition": "${curriculumPosition}",
   "objectives": ["By the end of this lesson, pupils should be able to: objective 1", "objective 2", "objective 3"],
   "entryBehaviour": "What pupils already know from previous lessons...",
   "materials": ["material 1", "material 2"],
@@ -81,11 +93,14 @@ IMPORTANT:
     const userPrompt = `Generate a complete lesson copy note for pupils for:
 - Subject: ${subject}
 - Class: ${classLevel}
-- Term: ${term || "1"}
-- Week: ${week || "1"}
+- Term: ${termLabel} Term (Term ${term || 1})
+- Week: Week ${week || 1} of 13
 - Topic: ${topic}
 ${subTopic ? `- Sub-topic: ${subTopic}` : ""}
 ${resources && resources.length > 0 ? `- Available resources: ${resources.join(", ")}` : "- Available resources: Chalkboard, textbooks, locally available objects"}
+
+Curriculum Position: ${curriculumPosition}
+Ensure this content is sequenced appropriately for this point in the Nigerian academic calendar. Build on what students should have covered in earlier weeks this term.
 
 Generate a detailed pupil note with at least 5 sections (heading, introduction, main content, worked examples, and summary). The content should be what pupils actually copy into their books.`;
 
@@ -135,7 +150,6 @@ Generate a detailed pupil note with at least 5 sections (heading, introduction, 
       );
     }
 
-    // Parse the JSON from the AI response, handling potential markdown fences
     let parsed;
     try {
       const cleaned = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();

@@ -11,6 +11,7 @@ import SchemeOfWork from "./pages/SchemeOfWork";
 import CopyNoteGenerator from "./pages/CopyNoteGenerator";
 import Templates from "./pages/Templates";
 import SettingsPage from "./pages/Settings";
+import LessonReviewer from "./pages/LessonReviewer";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
@@ -42,6 +43,7 @@ const App = () => (
                     <Route path="/ai-notes" element={<CopyNoteGenerator />} />
                     <Route path="/templates" element={<Templates />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/reviewer" element={<LessonReviewer />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
