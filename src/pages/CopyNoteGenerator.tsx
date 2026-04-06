@@ -325,6 +325,28 @@ export default function CopyNoteGenerator() {
     }
   };
 
+  const handleShareNote = async (content: string, topic?: string) => {
+    const cleanText = sectionsToPlainText(parseNoteToSections(content));
+    const shareData = {
+      title: topic ? `Copy Note: ${topic}` : 'Student Copy Note',
+      text: cleanText,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        toast.success('Note shared!');
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          await navigator.clipboard.writeText(cleanText);
+          toast.success('Copied to clipboard for sharing!');
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(cleanText);
+      toast.success('Copied to clipboard for sharing!');
+    }
+  };
+
   const handleDeleteNote = async (id: string) => {
     await deleteAINote(id);
     const notes = await getAllAINotes();
