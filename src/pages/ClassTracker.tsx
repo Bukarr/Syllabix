@@ -218,7 +218,7 @@ export default function ClassTracker() {
             {showCreate && (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-semibold">Create Class Group</h3>
-                <Input placeholder="e.g. JSS2A — Basic Science" value={newName} onChange={e => setNewName(e.target.value)} className="text-sm h-9" />
+                <Input placeholder="e.g. JSS2A — Basic Science" maxLength={100} value={newName} onChange={e => setNewName(e.target.value)} className="text-sm h-9" />
                 <div className="grid grid-cols-2 gap-2">
                   <select value={newSubject} onChange={e => setNewSubject(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2 text-xs">
                     <option value="">Subject</option>
