@@ -307,7 +307,7 @@ export default function ClassTracker() {
 
                 {activeGroup && activeGroup.students.length > 0 && (
                   <div className="space-y-3">
-                    <Input placeholder="Topic (e.g. Photosynthesis)" value={scoreTopic} onChange={e => setScoreTopic(e.target.value)} className="text-sm" />
+                    <Input placeholder="Topic (e.g. Photosynthesis)" maxLength={200} value={scoreTopic} onChange={e => setScoreTopic(e.target.value)} className="text-sm" />
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-xs">Score Type</Label>
