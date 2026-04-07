@@ -26,6 +26,7 @@ serve(async (req) => {
     const term = typeof body.term === 'number' ? Math.min(Math.max(body.term, 1), 3) : 1;
     const week = typeof body.week === 'number' ? Math.min(Math.max(body.week, 1), 13) : 1;
     const resources = Array.isArray(body.resources) ? body.resources.map((r: unknown) => sanitize(r, 100)).slice(0, 20) : [];
+    const weakTopics = Array.isArray(body.weakTopics) ? body.weakTopics.map((t: unknown) => sanitize(t, 100)).slice(0, 10) : [];
 
     if (!subject || !classLevel || !topic) {
       return new Response(
@@ -100,6 +101,10 @@ IMPORTANT:
 - The "studentActivity" describes what pupils do at each stage
 - Return ONLY the JSON object. No markdown, no explanation, no code fences.`;
 
+    const weakTopicNote = weakTopics.length > 0
+      ? `\n\nIMPORTANT SCAFFOLDING: The Class Tracker has identified these weak topics among students: ${weakTopics.join(", ")}. If any of these relate to today's lesson, include extra foundational review, simpler examples first, and explicit connections to help students who struggled with these areas.`
+      : '';
+
     const userPrompt = `Generate a complete lesson copy note for pupils for:
 - Subject: ${subject}
 - Class: ${classLevel}
@@ -112,7 +117,7 @@ ${resources && resources.length > 0 ? `- Available resources: ${resources.join("
 Curriculum Position: ${curriculumPosition}
 Ensure this content is sequenced appropriately for this point in the Nigerian academic calendar. Build on what students should have covered in earlier weeks this term.
 
-Generate a detailed pupil note with at least 5 sections (heading, introduction, main content, worked examples, and summary). The content should be what pupils actually copy into their books.`;
+Generate a detailed pupil note with at least 5 sections (heading, introduction, main content, worked examples, and summary). The content should be what pupils actually copy into their books.${weakTopicNote}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

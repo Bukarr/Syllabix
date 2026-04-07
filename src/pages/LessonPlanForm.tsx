@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
+import { getAllClassGroups, getWeakTopics, type ClassGroup } from '@/lib/db-tracker';
 import { toast } from 'sonner';
 import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
 import { VoiceInput } from '@/components/VoiceInput';
@@ -52,17 +53,38 @@ export default function LessonPlanForm() {
   // Assessment modal
   const [showAssessment, setShowAssessment] = useState(false);
   const [showResources, setShowResources] = useState(false);
+  
+  // Weak topics from Class Tracker
+  const [weakTopics, setWeakTopics] = useState<string[]>([]);
+  const [classGroups, setClassGroups] = useState<ClassGroup[]>([]);
 
   useEffect(() => {
-    Promise.all([getProfile(), getAllSOW(), getAllLessonPlans()]).then(([p, s, plans]) => {
+    Promise.all([getProfile(), getAllSOW(), getAllLessonPlans(), getAllClassGroups()]).then(([p, s, plans, groups]) => {
       if (p) setProfile(p);
       setSows(s);
+      setClassGroups(groups);
       if (editId) {
         const existing = plans.find(lp => lp.id === editId);
         if (existing) setPlan(existing);
       }
     });
   }, [editId]);
+
+  // Update weak topics when subject/class changes
+  useEffect(() => {
+    if (!plan.subject || !plan.classLevel) {
+      setWeakTopics([]);
+      return;
+    }
+    const matching = classGroups.find(
+      g => g.subject === plan.subject && g.classLevel === plan.classLevel
+    );
+    if (matching) {
+      setWeakTopics(getWeakTopics(matching));
+    } else {
+      setWeakTopics([]);
+    }
+  }, [plan.subject, plan.classLevel, classGroups]);
 
   // Auto-fill from SOW
   useEffect(() => {
@@ -149,6 +171,7 @@ export default function LessonPlanForm() {
           term: plan.term,
           week: plan.week,
           resources: plan.materials,
+          weakTopics: weakTopics.length > 0 ? weakTopics : undefined,
         }),
       });
 
@@ -371,6 +394,21 @@ export default function LessonPlanForm() {
                   />
                 </div>
               </div>
+
+              {/* Weak Topics Alert */}
+              {weakTopics.length > 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="rounded-xl border border-warning/30 bg-warning/5 p-3 space-y-1"
+                >
+                  <p className="text-xs font-semibold" style={{ color: 'hsl(var(--warning))' }}>
+                    ⚠ Weak Topics Detected ({plan.classLevel})
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Your Class Tracker shows students struggling with: <strong>{weakTopics.join(', ')}</strong>.
+                    AI generation will include scaffolding for these areas.
+                  </p>
+                </motion.div>
+              )}
 
               {/* AI Generate Button */}
               {plan.subject && plan.topic && (

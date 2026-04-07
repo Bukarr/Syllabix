@@ -14,13 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          role: string
+          school_code: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          role?: string
+          school_code?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          role?: string
+          school_code?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scheme_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          scheme_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          scheme_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          scheme_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheme_comments_scheme_id_fkey"
+            columns: ["scheme_id"]
+            isOneToOne: false
+            referencedRelation: "shared_schemes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_schemes: {
+        Row: {
+          class_level: string
+          created_at: string
+          id: string
+          school_code: string
+          status: string
+          subject: string
+          term: number
+          updated_at: string
+          user_id: string
+          weeks: Json
+          year: string
+        }
+        Insert: {
+          class_level: string
+          created_at?: string
+          id?: string
+          school_code: string
+          status?: string
+          subject: string
+          term: number
+          updated_at?: string
+          user_id: string
+          weeks?: Json
+          year: string
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          id?: string
+          school_code?: string
+          status?: string
+          subject?: string
+          term?: number
+          updated_at?: string
+          user_id?: string
+          weeks?: Json
+          year?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_school_code: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

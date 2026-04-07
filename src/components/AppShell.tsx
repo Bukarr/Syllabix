@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, FileText, PenLine, Settings,
   ClipboardCheck, Menu, X, Plus, BarChart3, Briefcase,
-  LinkIcon, ChevronRight
+  LinkIcon, ChevronRight, Share2
 } from 'lucide-react';
 import { OnlineIndicator } from './OnlineIndicator';
 import { AppLogo } from './AppLogo';
@@ -29,6 +29,12 @@ const navGroups = [
     label: 'REVIEW',
     items: [
       { to: '/reviewer', icon: ClipboardCheck, label: 'Lesson Reviewer' },
+    ],
+  },
+  {
+    label: 'COLLABORATE',
+    items: [
+      { to: '/collaborate', icon: Share2, label: 'School Workspace' },
     ],
   },
   {
