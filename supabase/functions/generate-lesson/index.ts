@@ -13,9 +13,19 @@ serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) throw new Error("API key missing");
 
-    const { subject, classLevel, topic, subTopic, term, week, resources } = await req.json();
+    const sanitize = (s: unknown, max = 300): string =>
+      typeof s === 'string' ? s.replace(/[\x00-\x1F\x7F]/g, '').slice(0, max) : '';
+
+    const body = await req.json();
+    const subject = sanitize(body.subject, 100);
+    const classLevel = sanitize(body.classLevel, 50);
+    const topic = sanitize(body.topic, 200);
+    const subTopic = sanitize(body.subTopic, 200);
+    const term = typeof body.term === 'number' ? Math.min(Math.max(body.term, 1), 3) : 1;
+    const week = typeof body.week === 'number' ? Math.min(Math.max(body.week, 1), 13) : 1;
+    const resources = Array.isArray(body.resources) ? body.resources.map((r: unknown) => sanitize(r, 100)).slice(0, 20) : [];
 
     if (!subject || !classLevel || !topic) {
       return new Response(
@@ -168,7 +178,7 @@ Generate a detailed pupil note with at least 5 sections (heading, introduction, 
   } catch (e) {
     console.error("generate-lesson error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

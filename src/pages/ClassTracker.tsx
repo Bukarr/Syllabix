@@ -63,8 +63,9 @@ export default function ClassTracker() {
   }
 
   const handleCreateGroup = async () => {
-    if (!newName.trim() || !newSubject || !newClass) {
-      toast.error('Fill in all fields');
+    const trimmedName = newName.trim();
+    if (!trimmedName || trimmedName.length > 100 || !newSubject || !newClass) {
+      toast.error(!trimmedName ? 'Fill in all fields' : 'Group name must be under 100 characters');
       return;
     }
     const group: ClassGroup = {
@@ -87,12 +88,16 @@ export default function ClassTracker() {
   };
 
   const handleAddStudent = async (groupId: string) => {
-    if (!addStudentName.trim()) return;
+    const trimmed = addStudentName.trim();
+    if (!trimmed || trimmed.length > 100) {
+      if (trimmed.length > 100) toast.error('Name must be under 100 characters');
+      return;
+    }
     const group = groups.find(g => g.id === groupId);
     if (!group) return;
     const updated = {
       ...group,
-      students: [...group.students, { id: crypto.randomUUID(), name: addStudentName.trim() }],
+      students: [...group.students, { id: crypto.randomUUID(), name: trimmed }],
     };
     await saveClassGroup(updated);
     setAddStudentName('');
@@ -213,7 +218,7 @@ export default function ClassTracker() {
             {showCreate && (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-semibold">Create Class Group</h3>
-                <Input placeholder="e.g. JSS2A — Basic Science" value={newName} onChange={e => setNewName(e.target.value)} className="text-sm h-9" />
+                <Input placeholder="e.g. JSS2A — Basic Science" maxLength={100} value={newName} onChange={e => setNewName(e.target.value)} className="text-sm h-9" />
                 <div className="grid grid-cols-2 gap-2">
                   <select value={newSubject} onChange={e => setNewSubject(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2 text-xs">
                     <option value="">Subject</option>
@@ -269,7 +274,7 @@ export default function ClassTracker() {
                       {/* Add student */}
                       {addStudentGroupId === group.id ? (
                         <div className="flex gap-2">
-                          <Input placeholder="Student name" value={addStudentName} onChange={e => setAddStudentName(e.target.value)} className="text-xs h-8 flex-1" onKeyDown={e => e.key === 'Enter' && handleAddStudent(group.id)} />
+                          <Input placeholder="Student name" maxLength={100} value={addStudentName} onChange={e => setAddStudentName(e.target.value)} className="text-xs h-8 flex-1" onKeyDown={e => e.key === 'Enter' && handleAddStudent(group.id)} />
                           <Button size="sm" className="h-8 px-3" onClick={() => handleAddStudent(group.id)}>
                             <Check className="h-3 w-3" />
                           </Button>
@@ -302,7 +307,7 @@ export default function ClassTracker() {
 
                 {activeGroup && activeGroup.students.length > 0 && (
                   <div className="space-y-3">
-                    <Input placeholder="Topic (e.g. Photosynthesis)" value={scoreTopic} onChange={e => setScoreTopic(e.target.value)} className="text-sm" />
+                    <Input placeholder="Topic (e.g. Photosynthesis)" maxLength={200} value={scoreTopic} onChange={e => setScoreTopic(e.target.value)} className="text-sm" />
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-xs">Score Type</Label>

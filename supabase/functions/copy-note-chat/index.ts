@@ -13,11 +13,23 @@ serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) throw new Error("API key missing");
 
-    const { messages, classLevel, subject } = await req.json();
+    const sanitize = (s: unknown, max = 300): string =>
+      typeof s === 'string' ? s.replace(/[\x00-\x1F\x7F]/g, '').slice(0, max) : '';
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    const body = await req.json();
+    const classLevel = sanitize(body.classLevel, 50);
+    const subject = sanitize(body.subject, 100);
+
+    // Validate and sanitize messages - only allow 'user' and 'assistant' roles
+    const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+    const messages = rawMessages
+      .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .map((m: any) => ({ role: m.role as string, content: sanitize(m.content, 5000) }))
+      .slice(-20); // Limit to last 20 messages
+
+    if (messages.length === 0) {
       return new Response(
         JSON.stringify({ error: "messages array is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -97,7 +109,7 @@ When the user sends a topic, generate the full copy note immediately. When they 
   } catch (e) {
     console.error("copy-note-chat error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
