@@ -15,6 +15,8 @@ import LessonReviewer from "./pages/LessonReviewer";
 import ClassTracker from "./pages/ClassTracker";
 import Portfolio from "./pages/Portfolio";
 import MyResources from "./pages/MyResources";
+import Auth from "./pages/Auth";
+import Collaborate from "./pages/Collaborate";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
@@ -32,6 +34,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/auth" element={<Auth />} />
           <Route
             path="*"
             element={
@@ -50,6 +53,7 @@ const App = () => (
                     <Route path="/class-tracker" element={<ClassTracker />} />
                     <Route path="/portfolio" element={<Portfolio />} />
                     <Route path="/my-resources" element={<MyResources />} />
+                    <Route path="/collaborate" element={<Collaborate />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
