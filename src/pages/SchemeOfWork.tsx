@@ -277,7 +277,7 @@ export default function SchemeOfWork() {
                 </div>
 
                 {/* Save button — fixed at bottom */}
-                <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom z-10">
+                <div className="fixed bottom-20 left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom z-10">
                   <Button className="w-full touch-target" onClick={handleSave}>
                     <Save className="h-4 w-4 mr-1" /> {editingId ? 'Update Scheme' : 'Save Scheme'}
                   </Button>

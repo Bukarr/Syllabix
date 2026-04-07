@@ -12,6 +12,9 @@ import CopyNoteGenerator from "./pages/CopyNoteGenerator";
 import Templates from "./pages/Templates";
 import SettingsPage from "./pages/Settings";
 import LessonReviewer from "./pages/LessonReviewer";
+import ClassTracker from "./pages/ClassTracker";
+import Portfolio from "./pages/Portfolio";
+import MyResources from "./pages/MyResources";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
@@ -44,6 +47,9 @@ const App = () => (
                     <Route path="/templates" element={<Templates />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/reviewer" element={<LessonReviewer />} />
+                    <Route path="/class-tracker" element={<ClassTracker />} />
+                    <Route path="/portfolio" element={<Portfolio />} />
+                    <Route path="/my-resources" element={<MyResources />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>

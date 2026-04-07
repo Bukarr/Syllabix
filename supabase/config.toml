@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.review-lesson]
 verify_jwt = false
+
+[functions.generate-resources]
+verify_jwt = false
