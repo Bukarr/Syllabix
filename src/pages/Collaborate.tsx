@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Share2, MessageSquare, Send, Trash2, Copy, Users,
-  BookOpen, ChevronDown, ChevronUp, Loader2, LogIn, Shield
+  BookOpen, ChevronDown, ChevronUp, Loader2, LogIn, Shield,
+  Plus, Clipboard, Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { getAllSOW, type SchemeOfWork as SOWType } from '@/lib/db';
-import { SUBJECTS, CLASSES } from '@/lib/curriculum';
 import { toast } from 'sonner';
 import type { User } from '@supabase/supabase-js';
 
@@ -46,12 +44,22 @@ interface Profile {
   role: string;
 }
 
+function generateWorkspaceCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const segments = [4, 3, 3];
+  return segments
+    .map(len =>
+      Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    )
+    .join('-');
+}
+
 export default function Collaborate() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [schoolCode, setSchoolCode] = useState('');
+  const [joinCode, setJoinCode] = useState('');
   const [sharedSchemes, setSharedSchemes] = useState<SharedScheme[]>([]);
   const [localSOWs, setLocalSOWs] = useState<SOWType[]>([]);
   const [expandedScheme, setExpandedScheme] = useState<string | null>(null);
@@ -59,6 +67,9 @@ export default function Collaborate() {
   const [commentText, setCommentText] = useState('');
   const [sharing, setSharing] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [showCreate, setShowCreate] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -90,7 +101,7 @@ export default function Collaborate() {
       .single();
     if (data) {
       setProfile(data as Profile);
-      setSchoolCode(data.school_code || '');
+      setJoinCode(data.school_code || '');
       if (data.school_code) {
         await loadSharedSchemes();
       }
@@ -104,7 +115,6 @@ export default function Collaborate() {
       .order('updated_at', { ascending: false });
     if (data) {
       setSharedSchemes(data as SharedScheme[]);
-      // Load author names
       const userIds = [...new Set(data.map((s: any) => s.user_id))];
       if (userIds.length > 0) {
         const { data: profs } = await supabase
@@ -128,7 +138,6 @@ export default function Collaborate() {
       .order('created_at', { ascending: true });
     if (data) {
       setComments(prev => ({ ...prev, [schemeId]: data as SchemeComment[] }));
-      // Load commenter names
       const userIds = [...new Set(data.map((c: any) => c.user_id))];
       if (userIds.length > 0) {
         const { data: profs } = await supabase
@@ -144,20 +153,44 @@ export default function Collaborate() {
     }
   };
 
-  const handleJoinSchool = async () => {
-    if (!schoolCode.trim() || !user) return;
-    const code = schoolCode.trim().toUpperCase();
+  const handleCreateWorkspace = async () => {
+    if (!user) return;
+    const code = generateWorkspaceCode();
     const { error } = await supabase
       .from('profiles')
       .update({ school_code: code })
       .eq('user_id', user.id);
     if (error) {
-      toast.error('Failed to join school workspace');
+      toast.error('Failed to create workspace');
       return;
     }
-    toast.success(`Joined school workspace: ${code}`);
+    setGeneratedCode(code);
+    toast.success('Workspace created! Share the code with colleagues.');
     await loadProfile(user.id);
     await loadSharedSchemes();
+  };
+
+  const handleJoinSchool = async () => {
+    if (!joinCode.trim() || !user) return;
+    const code = joinCode.trim().toUpperCase();
+    const { error } = await supabase
+      .from('profiles')
+      .update({ school_code: code })
+      .eq('user_id', user.id);
+    if (error) {
+      toast.error('Failed to join workspace');
+      return;
+    }
+    toast.success(`Joined workspace: ${code}`);
+    await loadProfile(user.id);
+    await loadSharedSchemes();
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCodeCopied(true);
+    toast.success('Code copied to clipboard!');
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   const handleShareSOW = async (sow: SOWType) => {
@@ -203,7 +236,6 @@ export default function Collaborate() {
   };
 
   const handleForkScheme = async (scheme: SharedScheme) => {
-    // Copy shared scheme to local IDB
     const { saveSOW } = await import('@/lib/db');
     await saveSOW({
       id: crypto.randomUUID(),
@@ -247,7 +279,7 @@ export default function Collaborate() {
 
   if (!user) {
     return (
-      <div className="pb-24 px-4 pt-4">
+      <div className="pb-28 px-4 pt-4">
         <div className="glass-card rounded-2xl p-8 text-center space-y-4">
           <Share2 className="h-12 w-12 text-primary mx-auto" />
           <h2 className="text-xl font-heading font-bold">School Collaboration</h2>
@@ -274,22 +306,78 @@ export default function Collaborate() {
           )}
         </div>
 
-        {/* School Code Setup */}
+        {/* No workspace yet — Create or Join */}
         {!profile?.school_code && (
-          <div className="glass-card rounded-xl p-4 space-y-3">
-            <h3 className="text-sm font-semibold">Join Your School Workspace</h3>
-            <p className="text-xs text-muted-foreground">
-              Enter your school code to start collaborating. Share this code with colleagues so they join the same workspace.
-            </p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g. LAGOS-ACA-001"
-                value={schoolCode}
-                onChange={e => setSchoolCode(e.target.value.toUpperCase())}
-                className="text-sm h-10 font-mono"
-                maxLength={30}
-              />
-              <Button onClick={handleJoinSchool} disabled={!schoolCode.trim()}>Join</Button>
+          <div className="space-y-4">
+            {/* Create Workspace */}
+            <div className="glass-card rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Plus className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold">Create a Workspace</h3>
+                  <p className="text-[11px] text-muted-foreground">Generate a unique code and invite colleagues</p>
+                </div>
+              </div>
+
+              {!generatedCode ? (
+                <Button onClick={handleCreateWorkspace} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" /> Create New Workspace
+                </Button>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-2"
+                >
+                  <p className="text-xs text-muted-foreground">Your workspace code:</p>
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                    <span className="flex-1 font-mono text-lg font-bold text-primary tracking-wider">{generatedCode}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => handleCopyCode(generatedCode)}
+                    >
+                      {codeCopied ? <Check className="h-4 w-4 text-green-500" /> : <Clipboard className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Share this code with your colleagues so they can join the same workspace.
+                  </p>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-border/50" />
+              <span className="text-[10px] font-semibold text-muted-foreground tracking-wider">OR</span>
+              <div className="flex-1 h-px bg-border/50" />
+            </div>
+
+            {/* Join Workspace */}
+            <div className="glass-card rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold">Join a Workspace</h3>
+                  <p className="text-[11px] text-muted-foreground">Enter a code from your colleague</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g. ABCD-123-XYZ"
+                  value={joinCode}
+                  onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                  className="text-sm h-10 font-mono"
+                  maxLength={30}
+                />
+                <Button onClick={handleJoinSchool} disabled={!joinCode.trim()}>Join</Button>
+              </div>
             </div>
           </div>
         )}
@@ -301,10 +389,18 @@ export default function Collaborate() {
               <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
                 <Users className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold">School: {profile.school_code}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">Workspace: {profile.school_code}</p>
                 <p className="text-xs text-muted-foreground">{profile.display_name || 'Teacher'} • {profile.role}</p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 shrink-0"
+                onClick={() => handleCopyCode(profile.school_code)}
+              >
+                {codeCopied ? <Check className="h-4 w-4 text-green-500" /> : <Clipboard className="h-4 w-4" />}
+              </Button>
             </div>
 
             <Tabs defaultValue="shared" className="w-full">
@@ -346,69 +442,76 @@ export default function Collaborate() {
                         </p>
                       </button>
 
-                      {isExpanded && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="px-4 pb-4 space-y-3">
-                          {/* Week preview */}
-                          <div className="max-h-48 overflow-y-auto space-y-1.5">
-                            {(scheme.weeks as any[]).map((w: any, i: number) => (
-                              <div key={i} className="flex gap-2 text-xs py-1 border-b border-border/30 last:border-0">
-                                <span className="text-muted-foreground w-10 shrink-0">Wk {w.week}</span>
-                                <span className="flex-1">{w.topic || '—'}</span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleForkScheme(scheme)}>
-                              <Copy className="h-3 w-3 mr-1" /> Fork & Adapt
-                            </Button>
-                            {profile?.role === 'admin' && scheme.status !== 'approved' && (
-                              <Button size="sm" className="text-xs" onClick={() => handleApprove(scheme.id)}>
-                                Approve
-                              </Button>
-                            )}
-                          </div>
-
-                          {/* Comments */}
-                          <div className="border-t border-border/30 pt-3 space-y-2">
-                            <h4 className="text-xs font-semibold flex items-center gap-1">
-                              <MessageSquare className="h-3 w-3" /> Feedback ({schemeComments.length})
-                            </h4>
-                            {schemeComments.map(c => (
-                              <div key={c.id} className="bg-muted/30 rounded-lg p-2.5 space-y-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-semibold">{profiles[c.user_id] || 'Teacher'}</span>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[9px] text-muted-foreground">
-                                      {new Date(c.created_at).toLocaleDateString()}
-                                    </span>
-                                    {c.user_id === user.id && (
-                                      <button onClick={() => handleDeleteComment(c.id, scheme.id)} className="text-destructive/50 hover:text-destructive">
-                                        <Trash2 className="h-3 w-3" />
-                                      </button>
-                                    )}
-                                  </div>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="px-4 pb-4 space-y-3"
+                          >
+                            {/* Week preview */}
+                            <div className="max-h-48 overflow-y-auto space-y-1.5">
+                              {(scheme.weeks as any[]).map((w: any, i: number) => (
+                                <div key={i} className="flex gap-2 text-xs py-1 border-b border-border/30 last:border-0">
+                                  <span className="text-muted-foreground w-10 shrink-0">Wk {w.week}</span>
+                                  <span className="flex-1">{w.topic || '—'}</span>
                                 </div>
-                                <p className="text-xs text-foreground/80">{c.comment}</p>
-                              </div>
-                            ))}
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Add feedback..."
-                                value={commentText}
-                                onChange={e => setCommentText(e.target.value)}
-                                className="text-xs h-8 flex-1"
-                                maxLength={500}
-                                onKeyDown={e => e.key === 'Enter' && handleAddComment(scheme.id)}
-                              />
-                              <Button size="sm" className="h-8 px-3" onClick={() => handleAddComment(scheme.id)} disabled={!commentText.trim()}>
-                                <Send className="h-3 w-3" />
-                              </Button>
+                              ))}
                             </div>
-                          </div>
-                        </motion.div>
-                      )}
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleForkScheme(scheme)}>
+                                <Copy className="h-3 w-3 mr-1" /> Fork & Adapt
+                              </Button>
+                              {profile?.role === 'admin' && scheme.status !== 'approved' && (
+                                <Button size="sm" className="text-xs" onClick={() => handleApprove(scheme.id)}>
+                                  Approve
+                                </Button>
+                              )}
+                            </div>
+
+                            {/* Comments */}
+                            <div className="border-t border-border/30 pt-3 space-y-2">
+                              <h4 className="text-xs font-semibold flex items-center gap-1">
+                                <MessageSquare className="h-3 w-3" /> Feedback ({schemeComments.length})
+                              </h4>
+                              {schemeComments.map(c => (
+                                <div key={c.id} className="bg-muted/30 rounded-lg p-2.5 space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-semibold">{profiles[c.user_id] || 'Teacher'}</span>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[9px] text-muted-foreground">
+                                        {new Date(c.created_at).toLocaleDateString()}
+                                      </span>
+                                      {c.user_id === user.id && (
+                                        <button onClick={() => handleDeleteComment(c.id, scheme.id)} className="text-destructive/50 hover:text-destructive">
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-foreground/80">{c.comment}</p>
+                                </div>
+                              ))}
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Add feedback..."
+                                  value={commentText}
+                                  onChange={e => setCommentText(e.target.value)}
+                                  className="text-xs h-8 flex-1"
+                                  maxLength={500}
+                                  onKeyDown={e => e.key === 'Enter' && handleAddComment(scheme.id)}
+                                />
+                                <Button size="sm" className="h-8 px-3" onClick={() => handleAddComment(scheme.id)} disabled={!commentText.trim()}>
+                                  <Send className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   );
                 })}
