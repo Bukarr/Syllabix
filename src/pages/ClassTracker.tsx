@@ -63,8 +63,9 @@ export default function ClassTracker() {
   }
 
   const handleCreateGroup = async () => {
-    if (!newName.trim() || !newSubject || !newClass) {
-      toast.error('Fill in all fields');
+    const trimmedName = newName.trim();
+    if (!trimmedName || trimmedName.length > 100 || !newSubject || !newClass) {
+      toast.error(!trimmedName ? 'Fill in all fields' : 'Group name must be under 100 characters');
       return;
     }
     const group: ClassGroup = {
@@ -87,12 +88,16 @@ export default function ClassTracker() {
   };
 
   const handleAddStudent = async (groupId: string) => {
-    if (!addStudentName.trim()) return;
+    const trimmed = addStudentName.trim();
+    if (!trimmed || trimmed.length > 100) {
+      if (trimmed.length > 100) toast.error('Name must be under 100 characters');
+      return;
+    }
     const group = groups.find(g => g.id === groupId);
     if (!group) return;
     const updated = {
       ...group,
-      students: [...group.students, { id: crypto.randomUUID(), name: addStudentName.trim() }],
+      students: [...group.students, { id: crypto.randomUUID(), name: trimmed }],
     };
     await saveClassGroup(updated);
     setAddStudentName('');

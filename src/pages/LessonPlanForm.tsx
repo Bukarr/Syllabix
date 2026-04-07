@@ -365,6 +365,7 @@ export default function LessonPlanForm() {
                   <Label className="text-sm font-medium">Duration</Label>
                   <Input
                     value={plan.duration}
+                    maxLength={50}
                     onChange={e => updatePlan('duration', e.target.value)}
                     className="mt-1.5 touch-target"
                   />
@@ -448,6 +449,7 @@ export default function LessonPlanForm() {
                 <Label className="text-sm font-medium">Reference</Label>
                 <Input
                   placeholder="e.g. New General Mathematics, Chapter 3, pg. 45"
+                  maxLength={500}
                   value={plan.references}
                   onChange={e => updatePlan('references', e.target.value)}
                   className="touch-target"
