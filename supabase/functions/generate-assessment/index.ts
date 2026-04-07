@@ -13,9 +13,19 @@ serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) throw new Error("API key missing");
 
-    const { subject, classLevel, topic, subTopic, assessmentType, questionCount, difficulty } = await req.json();
+    const sanitize = (s: unknown, max = 300): string =>
+      typeof s === 'string' ? s.replace(/[\x00-\x1F\x7F]/g, '').slice(0, max) : '';
+
+    const body = await req.json();
+    const subject = sanitize(body.subject, 100);
+    const classLevel = sanitize(body.classLevel, 50);
+    const topic = sanitize(body.topic, 200);
+    const subTopic = sanitize(body.subTopic, 200);
+    const assessmentType = sanitize(body.assessmentType, 20);
+    const questionCount = typeof body.questionCount === 'number' ? Math.min(Math.max(body.questionCount, 1), 20) : 10;
+    const difficulty = sanitize(body.difficulty, 20);
 
     if (!subject || !classLevel || !topic) {
       return new Response(
@@ -150,7 +160,7 @@ ${subTopic ? `- Sub-topic: ${subTopic}` : ""}
   } catch (e) {
     console.error("generate-assessment error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
