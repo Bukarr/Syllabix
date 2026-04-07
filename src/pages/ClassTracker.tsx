@@ -274,7 +274,7 @@ export default function ClassTracker() {
                       {/* Add student */}
                       {addStudentGroupId === group.id ? (
                         <div className="flex gap-2">
-                          <Input placeholder="Student name" value={addStudentName} onChange={e => setAddStudentName(e.target.value)} className="text-xs h-8 flex-1" onKeyDown={e => e.key === 'Enter' && handleAddStudent(group.id)} />
+                          <Input placeholder="Student name" maxLength={100} value={addStudentName} onChange={e => setAddStudentName(e.target.value)} className="text-xs h-8 flex-1" onKeyDown={e => e.key === 'Enter' && handleAddStudent(group.id)} />
                           <Button size="sm" className="h-8 px-3" onClick={() => handleAddStudent(group.id)}>
                             <Check className="h-3 w-3" />
                           </Button>
