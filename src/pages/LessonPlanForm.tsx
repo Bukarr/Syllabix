@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
 import { VoiceInput } from '@/components/VoiceInput';
 import { AssessmentGenerator } from '@/components/AssessmentGenerator';
+import { ResourceRecommendations } from '@/components/ResourceRecommendations';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 
 const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
@@ -50,6 +51,7 @@ export default function LessonPlanForm() {
   
   // Assessment modal
   const [showAssessment, setShowAssessment] = useState(false);
+  const [showResources, setShowResources] = useState(false);
 
   useEffect(() => {
     Promise.all([getProfile(), getAllSOW(), getAllLessonPlans()]).then(([p, s, plans]) => {
@@ -170,6 +172,7 @@ export default function LessonPlanForm() {
         setCurriculumPosition(data.curriculumPosition);
       }
       toast.success('Lesson note generated! Review and edit as needed.');
+      setShowResources(true);
       setStep(1);
     } catch (e: any) {
       toast.error(e.message || 'Failed to generate lesson note');
@@ -540,8 +543,16 @@ export default function LessonPlanForm() {
         )}
       </motion.div>
 
+      {/* Resource Recommendations */}
+      <ResourceRecommendations
+        subject={plan.subject || ''}
+        classLevel={plan.classLevel || ''}
+        topic={plan.topic || ''}
+        visible={showResources && !!plan.topic}
+      />
+
       {/* Bottom navigation */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom">
+      <div className="fixed bottom-20 left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom">
         <div className="flex gap-3">
           {step > 0 && (
             <Button variant="outline" className="touch-target" onClick={() => setStep(s => s - 1)}>
