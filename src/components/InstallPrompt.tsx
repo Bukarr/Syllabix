@@ -64,7 +64,7 @@ const InstallPrompt = () => {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-[5.5rem] left-4 right-4 z-50 mx-auto max-w-md animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-[6.5rem] left-4 right-4 z-50 mx-auto max-w-md animate-in slide-in-from-bottom-4 duration-300">
       <div className="rounded-xl border border-border bg-card p-4 shadow-lg flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
           {isIosDevice ? (

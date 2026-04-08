@@ -196,7 +196,7 @@ export default function ClassTracker() {
   }
 
   return (
-    <div className="pb-28 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-heading font-bold">Class Tracker</h2>

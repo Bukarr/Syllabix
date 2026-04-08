@@ -76,7 +76,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="pb-24 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-5">
         {/* Greeting */}
         <motion.div variants={itemVariants}>

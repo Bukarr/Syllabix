@@ -59,7 +59,7 @@ export default function MyPlans() {
   }
 
   return (
-    <div className="pb-24 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-heading font-bold">My Lesson Notes</h2>

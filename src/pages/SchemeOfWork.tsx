@@ -191,7 +191,7 @@ export default function SchemeOfWork() {
   }
 
   return (
-    <div className="pb-24 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -409,7 +409,7 @@ export default function SchemeOfWork() {
                 )}
 
                 {/* Save button */}
-                <div className="fixed bottom-[5.5rem] left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom z-40">
+                <div className="fixed bottom-[6.5rem] left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom z-40">
                   <Button className="w-full touch-target" onClick={handleSave}>
                     <Save className="h-4 w-4 mr-1" /> {editingId ? 'Update Full Year' : 'Save Full Year Scheme'}
                   </Button>

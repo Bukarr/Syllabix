@@ -251,6 +251,16 @@ export default function Collaborate() {
     navigate('/scheme');
   };
 
+  const handleDeleteScheme = async (schemeId: string) => {
+    const { error } = await supabase.from('shared_schemes').delete().eq('id', schemeId);
+    if (error) {
+      toast.error('Failed to delete scheme');
+    } else {
+      toast.success('Scheme deleted');
+      await loadSharedSchemes();
+    }
+  };
+
   const handleApprove = async (schemeId: string) => {
     if (profile?.role !== 'admin') return;
     await supabase
@@ -279,7 +289,7 @@ export default function Collaborate() {
 
   if (!user) {
     return (
-      <div className="pb-28 px-4 pt-4">
+      <div className="pb-32 px-4 pt-4">
         <div className="glass-card rounded-2xl p-8 text-center space-y-4">
           <Share2 className="h-12 w-12 text-primary mx-auto" />
           <h2 className="text-xl font-heading font-bold">School Collaboration</h2>
@@ -295,7 +305,7 @@ export default function Collaborate() {
   }
 
   return (
-    <div className="pb-28 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-heading font-bold">Collaborate</h2>
@@ -461,13 +471,23 @@ export default function Collaborate() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleForkScheme(scheme)}>
                                 <Copy className="h-3 w-3 mr-1" /> Fork & Adapt
                               </Button>
                               {profile?.role === 'admin' && scheme.status !== 'approved' && (
                                 <Button size="sm" className="text-xs" onClick={() => handleApprove(scheme.id)}>
                                   Approve
+                                </Button>
+                              )}
+                              {scheme.user_id === user.id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteScheme(scheme.id)}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" /> Delete
                                 </Button>
                               )}
                             </div>
