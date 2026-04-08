@@ -230,11 +230,17 @@ export default function Collaborate() {
 
   const handleAddComment = async (schemeId: string) => {
     if (!commentText.trim() || !user) return;
-    const { error } = await supabase.from('scheme_comments').insert({
-      scheme_id: schemeId,
-      user_id: user.id,
-      comment: commentText.trim(),
-    });
+    const payload = { scheme_id: schemeId, user_id: user.id, comment: commentText.trim() };
+
+    if (!isOnline) {
+      await enqueueSync({ table: 'scheme_comments', action: 'insert', payload });
+      toast.info('Comment queued — will sync when online');
+      setCommentText('');
+      await refreshCount();
+      return;
+    }
+
+    const { error } = await supabase.from('scheme_comments').insert(payload);
     if (error) {
       toast.error('Failed to add comment');
     } else {
@@ -244,6 +250,12 @@ export default function Collaborate() {
   };
 
   const handleDeleteComment = async (commentId: string, schemeId: string) => {
+    if (!isOnline) {
+      await enqueueSync({ table: 'scheme_comments', action: 'delete', payload: {}, matchColumn: 'id', matchValue: commentId });
+      toast.info('Delete queued — will sync when online');
+      await refreshCount();
+      return;
+    }
     await supabase.from('scheme_comments').delete().eq('id', commentId);
     await loadComments(schemeId);
   };
@@ -265,6 +277,13 @@ export default function Collaborate() {
   };
 
   const handleDeleteScheme = async (schemeId: string) => {
+    if (!isOnline) {
+      await enqueueSync({ table: 'shared_schemes', action: 'delete', payload: {}, matchColumn: 'id', matchValue: schemeId });
+      toast.info('Delete queued — will sync when online');
+      setSharedSchemes(prev => prev.filter(s => s.id !== schemeId));
+      await refreshCount();
+      return;
+    }
     const { error } = await supabase.from('shared_schemes').delete().eq('id', schemeId);
     if (error) {
       toast.error('Failed to delete scheme');
