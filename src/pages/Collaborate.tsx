@@ -289,7 +289,7 @@ export default function Collaborate() {
 
   if (!user) {
     return (
-      <div className="pb-28 px-4 pt-4">
+      <div className="pb-32 px-4 pt-4">
         <div className="glass-card rounded-2xl p-8 text-center space-y-4">
           <Share2 className="h-12 w-12 text-primary mx-auto" />
           <h2 className="text-xl font-heading font-bold">School Collaboration</h2>
@@ -305,7 +305,7 @@ export default function Collaborate() {
   }
 
   return (
-    <div className="pb-28 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-heading font-bold">Collaborate</h2>

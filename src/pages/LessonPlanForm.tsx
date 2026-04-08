@@ -269,7 +269,7 @@ export default function LessonPlanForm() {
   const availableSubjects = profile?.subjects || [];
 
   return (
-    <div className="pb-24 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       {/* Step indicator */}
       <div className="flex items-center gap-1 mb-6">
         {STEPS.map((s, i) => (

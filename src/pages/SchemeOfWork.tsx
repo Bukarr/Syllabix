@@ -191,7 +191,7 @@ export default function SchemeOfWork() {
   }
 
   return (
-    <div className="pb-24 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
