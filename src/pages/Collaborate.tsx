@@ -348,6 +348,38 @@ export default function Collaborate() {
           )}
         </div>
 
+        {/* Sync status banner */}
+        {(!isOnline || pendingCount > 0) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className={`rounded-xl p-3 flex items-center gap-3 ${
+              !isOnline ? 'bg-warning/10 border border-warning/20' : 'bg-primary/10 border border-primary/20'
+            }`}
+          >
+            {!isOnline ? (
+              <CloudOff className="h-4 w-4 text-warning shrink-0" />
+            ) : (
+              <RefreshCw className={`h-4 w-4 text-primary shrink-0 ${syncing ? 'animate-spin' : ''}`} />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold">
+                {!isOnline ? 'You\'re offline' : 'Sync pending'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {pendingCount > 0
+                  ? `${pendingCount} change${pendingCount > 1 ? 's' : ''} queued${!isOnline ? ' — will sync when back online' : ''}`
+                  : 'Changes will be queued automatically'}
+              </p>
+            </div>
+            {isOnline && pendingCount > 0 && !syncing && (
+              <Button size="sm" variant="outline" className="h-7 text-[10px] shrink-0" onClick={processQueue}>
+                Sync Now
+              </Button>
+            )}
+          </motion.div>
+        )}
+
         {/* No workspace yet — Create or Join */}
         {!profile?.school_code && (
           <div className="space-y-4">
