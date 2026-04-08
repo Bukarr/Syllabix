@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Share2, MessageSquare, Send, Trash2, Copy, Users,
   BookOpen, ChevronDown, ChevronUp, Loader2, LogIn, Shield,
-  Plus, Clipboard, Check
+  Plus, Clipboard, Check, CloudOff, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { getAllSOW, type SchemeOfWork as SOWType } from '@/lib/db';
+import { enqueueSync } from '@/lib/sync-queue';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useSyncQueue } from '@/hooks/use-sync-queue';
 import { toast } from 'sonner';
 import type { User } from '@supabase/supabase-js';
 
@@ -56,6 +59,8 @@ function generateWorkspaceCode(): string {
 
 export default function Collaborate() {
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
+  const { pendingCount, syncing, processQueue, refreshCount } = useSyncQueue();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,7 +201,7 @@ export default function Collaborate() {
   const handleShareSOW = async (sow: SOWType) => {
     if (!user || !profile?.school_code) return;
     setSharing(true);
-    const { error } = await supabase.from('shared_schemes').insert({
+    const payload = {
       user_id: user.id,
       school_code: profile.school_code,
       subject: sow.subject,
@@ -205,23 +210,37 @@ export default function Collaborate() {
       year: sow.year,
       weeks: sow.weeks as any,
       status: 'shared',
-    });
-    if (error) {
-      toast.error('Failed to share scheme');
+    };
+
+    if (!isOnline) {
+      await enqueueSync({ table: 'shared_schemes', action: 'insert', payload });
+      toast.info('You\'re offline — change queued for sync');
+      await refreshCount();
     } else {
-      toast.success('Scheme shared with your school!');
-      await loadSharedSchemes();
+      const { error } = await supabase.from('shared_schemes').insert(payload);
+      if (error) {
+        toast.error('Failed to share scheme');
+      } else {
+        toast.success('Scheme shared with your school!');
+        await loadSharedSchemes();
+      }
     }
     setSharing(false);
   };
 
   const handleAddComment = async (schemeId: string) => {
     if (!commentText.trim() || !user) return;
-    const { error } = await supabase.from('scheme_comments').insert({
-      scheme_id: schemeId,
-      user_id: user.id,
-      comment: commentText.trim(),
-    });
+    const payload = { scheme_id: schemeId, user_id: user.id, comment: commentText.trim() };
+
+    if (!isOnline) {
+      await enqueueSync({ table: 'scheme_comments', action: 'insert', payload });
+      toast.info('Comment queued — will sync when online');
+      setCommentText('');
+      await refreshCount();
+      return;
+    }
+
+    const { error } = await supabase.from('scheme_comments').insert(payload);
     if (error) {
       toast.error('Failed to add comment');
     } else {
@@ -231,6 +250,12 @@ export default function Collaborate() {
   };
 
   const handleDeleteComment = async (commentId: string, schemeId: string) => {
+    if (!isOnline) {
+      await enqueueSync({ table: 'scheme_comments', action: 'delete', payload: {}, matchColumn: 'id', matchValue: commentId });
+      toast.info('Delete queued — will sync when online');
+      await refreshCount();
+      return;
+    }
     await supabase.from('scheme_comments').delete().eq('id', commentId);
     await loadComments(schemeId);
   };
@@ -252,6 +277,13 @@ export default function Collaborate() {
   };
 
   const handleDeleteScheme = async (schemeId: string) => {
+    if (!isOnline) {
+      await enqueueSync({ table: 'shared_schemes', action: 'delete', payload: {}, matchColumn: 'id', matchValue: schemeId });
+      toast.info('Delete queued — will sync when online');
+      setSharedSchemes(prev => prev.filter(s => s.id !== schemeId));
+      await refreshCount();
+      return;
+    }
     const { error } = await supabase.from('shared_schemes').delete().eq('id', schemeId);
     if (error) {
       toast.error('Failed to delete scheme');
@@ -315,6 +347,38 @@ export default function Collaborate() {
             </Badge>
           )}
         </div>
+
+        {/* Sync status banner */}
+        {(!isOnline || pendingCount > 0) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className={`rounded-xl p-3 flex items-center gap-3 ${
+              !isOnline ? 'bg-warning/10 border border-warning/20' : 'bg-primary/10 border border-primary/20'
+            }`}
+          >
+            {!isOnline ? (
+              <CloudOff className="h-4 w-4 text-warning shrink-0" />
+            ) : (
+              <RefreshCw className={`h-4 w-4 text-primary shrink-0 ${syncing ? 'animate-spin' : ''}`} />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold">
+                {!isOnline ? 'You\'re offline' : 'Sync pending'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {pendingCount > 0
+                  ? `${pendingCount} change${pendingCount > 1 ? 's' : ''} queued${!isOnline ? ' — will sync when back online' : ''}`
+                  : 'Changes will be queued automatically'}
+              </p>
+            </div>
+            {isOnline && pendingCount > 0 && !syncing && (
+              <Button size="sm" variant="outline" className="h-7 text-[10px] shrink-0" onClick={processQueue}>
+                Sync Now
+              </Button>
+            )}
+          </motion.div>
+        )}
 
         {/* No workspace yet — Create or Join */}
         {!profile?.school_code && (
