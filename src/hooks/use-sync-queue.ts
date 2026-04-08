@@ -26,42 +26,36 @@ export function useSyncQueue() {
   /** Process a single operation against Supabase */
   const processOp = async (op: SyncOperation): Promise<boolean> => {
     try {
-      const table = op.table as 'shared_schemes' | 'scheme_comments' | 'profiles';
-
       if (op.action === 'insert') {
-        const { error } = await supabase.from(table).insert(op.payload as any);
+        const { error } = await (supabase.from(op.table) as any).insert(op.payload);
         if (error) throw error;
       } else if (op.action === 'update') {
         if (!op.matchColumn || !op.matchValue) throw new Error('Missing match criteria');
 
-        // Conflict resolution: check server's updated_at
+        // Conflict resolution: check server's updated_at via last-write-wins
         if ('updated_at' in op.payload) {
-          const { data: serverRow } = await supabase
-            .from(table)
+          const { data: serverRow } = await (supabase.from(op.table) as any)
             .select('updated_at')
             .eq(op.matchColumn, op.matchValue)
             .maybeSingle();
 
-          if (serverRow && serverRow.updated_at) {
-            const serverTime = new Date(serverRow.updated_at as string).getTime();
+          if (serverRow?.updated_at) {
+            const serverTime = new Date(serverRow.updated_at).getTime();
             const localTime = new Date(op.createdAt).getTime();
             if (serverTime > localTime) {
-              // Server has newer data — skip this operation (conflict resolved: server wins)
-              console.log(`[Sync] Conflict resolved: server version is newer for ${table}/${op.matchValue}`);
-              return true; // Mark as "done" — don't retry
+              console.log(`[Sync] Conflict resolved: server wins for ${op.table}/${op.matchValue}`);
+              return true;
             }
           }
         }
 
-        const { error } = await supabase
-          .from(table)
-          .update(op.payload as any)
+        const { error } = await (supabase.from(op.table) as any)
+          .update(op.payload)
           .eq(op.matchColumn, op.matchValue);
         if (error) throw error;
       } else if (op.action === 'delete') {
         if (!op.matchColumn || !op.matchValue) throw new Error('Missing match criteria');
-        const { error } = await supabase
-          .from(table)
+        const { error } = await (supabase.from(op.table) as any)
           .delete()
           .eq(op.matchColumn, op.matchValue);
         if (error) throw error;
