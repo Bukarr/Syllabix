@@ -201,7 +201,7 @@ export default function Collaborate() {
   const handleShareSOW = async (sow: SOWType) => {
     if (!user || !profile?.school_code) return;
     setSharing(true);
-    const { error } = await supabase.from('shared_schemes').insert({
+    const payload = {
       user_id: user.id,
       school_code: profile.school_code,
       subject: sow.subject,
@@ -210,12 +210,20 @@ export default function Collaborate() {
       year: sow.year,
       weeks: sow.weeks as any,
       status: 'shared',
-    });
-    if (error) {
-      toast.error('Failed to share scheme');
+    };
+
+    if (!isOnline) {
+      await enqueueSync({ table: 'shared_schemes', action: 'insert', payload });
+      toast.info('You\'re offline — change queued for sync');
+      await refreshCount();
     } else {
-      toast.success('Scheme shared with your school!');
-      await loadSharedSchemes();
+      const { error } = await supabase.from('shared_schemes').insert(payload);
+      if (error) {
+        toast.error('Failed to share scheme');
+      } else {
+        toast.success('Scheme shared with your school!');
+        await loadSharedSchemes();
+      }
     }
     setSharing(false);
   };
