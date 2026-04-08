@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Share2, MessageSquare, Send, Trash2, Copy, Users,
   BookOpen, ChevronDown, ChevronUp, Loader2, LogIn, Shield,
-  Plus, Clipboard, Check
+  Plus, Clipboard, Check, CloudOff, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { getAllSOW, type SchemeOfWork as SOWType } from '@/lib/db';
+import { enqueueSync } from '@/lib/sync-queue';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useSyncQueue } from '@/hooks/use-sync-queue';
 import { toast } from 'sonner';
 import type { User } from '@supabase/supabase-js';
 
@@ -56,6 +59,8 @@ function generateWorkspaceCode(): string {
 
 export default function Collaborate() {
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
+  const { pendingCount, syncing, processQueue, refreshCount } = useSyncQueue();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
