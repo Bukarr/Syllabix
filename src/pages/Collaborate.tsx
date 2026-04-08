@@ -251,6 +251,16 @@ export default function Collaborate() {
     navigate('/scheme');
   };
 
+  const handleDeleteScheme = async (schemeId: string) => {
+    const { error } = await supabase.from('shared_schemes').delete().eq('id', schemeId);
+    if (error) {
+      toast.error('Failed to delete scheme');
+    } else {
+      toast.success('Scheme deleted');
+      await loadSharedSchemes();
+    }
+  };
+
   const handleApprove = async (schemeId: string) => {
     if (profile?.role !== 'admin') return;
     await supabase
@@ -461,13 +471,23 @@ export default function Collaborate() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleForkScheme(scheme)}>
                                 <Copy className="h-3 w-3 mr-1" /> Fork & Adapt
                               </Button>
                               {profile?.role === 'admin' && scheme.status !== 'approved' && (
                                 <Button size="sm" className="text-xs" onClick={() => handleApprove(scheme.id)}>
                                   Approve
+                                </Button>
+                              )}
+                              {scheme.user_id === user.id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteScheme(scheme.id)}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" /> Delete
                                 </Button>
                               )}
                             </div>
