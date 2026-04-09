@@ -592,8 +592,8 @@ export default function LessonPlanForm() {
       />
 
       {/* Bottom navigation */}
-      <div className="fixed bottom-[6.5rem] left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom z-40">
-        <div className="flex gap-3">
+      <div className="sticky bottom-[6.5rem] z-40 mx-4 mb-4 rounded-2xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur-md safe-bottom">
+        <div className="flex gap-3 overflow-x-auto">
           {step > 0 && (
             <Button variant="outline" className="touch-target" onClick={() => setStep(s => s - 1)}>
               <ChevronLeft className="h-4 w-4" />
