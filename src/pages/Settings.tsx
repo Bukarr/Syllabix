@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Globe, Trash2, Download, Bell, Clock, BookOpen } from 'lucide-react';
+import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,14 +17,27 @@ import {
   getPermissionStatus, type NotificationSettings
 } from '@/lib/notifications';
 import { SubjectEditor } from '@/components/SubjectEditor';
+import {
+  uploadBackup, downloadAndRestore, downloadBackupFile,
+  restoreFromFile, getLastBackupDate,
+} from '@/lib/backup';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>(getNotificationSettings());
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     getProfile().then(p => p && setProfile(p));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsSignedIn(!!user);
+      if (user) getLastBackupDate().then(setLastBackup);
+    });
   }, []);
 
   const validateField = (field: 'name' | 'schoolName', value: string) => {
@@ -270,6 +283,105 @@ export default function SettingsPage() {
         </div>
 
         {/* Data management */}
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="h-5 w-5 text-primary" />
+            <h3 className="font-heading font-semibold">Backup & Restore</h3>
+          </div>
+
+          {isSignedIn && (
+            <>
+              <Button
+                variant="outline"
+                className="w-full touch-target"
+                disabled={backupLoading}
+                onClick={async () => {
+                  setBackupLoading(true);
+                  const result = await uploadBackup();
+                  setBackupLoading(false);
+                  if (result.success) {
+                    toast.success('Backup uploaded to cloud!');
+                    getLastBackupDate().then(setLastBackup);
+                  } else {
+                    toast.error(result.error || 'Backup failed');
+                  }
+                }}
+              >
+                {backupLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CloudUpload className="h-4 w-4 mr-2" />}
+                Backup to Cloud
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full touch-target"
+                disabled={restoreLoading}
+                onClick={async () => {
+                  if (!confirm('This will restore missing data from your cloud backup. Continue?')) return;
+                  setRestoreLoading(true);
+                  const result = await downloadAndRestore();
+                  setRestoreLoading(false);
+                  if (result.success) {
+                    toast.success(result.stats || 'Data restored!');
+                  } else {
+                    toast.error(result.error || 'Restore failed');
+                  }
+                }}
+              >
+                {restoreLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CloudDownload className="h-4 w-4 mr-2" />}
+                Restore from Cloud
+              </Button>
+              {lastBackup && (
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Last backup: {new Date(lastBackup).toLocaleString()}
+                </p>
+              )}
+            </>
+          )}
+          {!isSignedIn && (
+            <p className="text-xs text-muted-foreground">Sign in to enable cloud backup & restore.</p>
+          )}
+
+          <div className="border-t border-border/30 pt-3 space-y-2">
+            <p className="text-[11px] text-muted-foreground">Or use local file backup:</p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs touch-target"
+                onClick={async () => {
+                  await downloadBackupFile();
+                  toast.success('Backup file downloaded');
+                }}
+              >
+                <FileDown className="h-3.5 w-3.5 mr-1" /> Download
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs touch-target"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.json';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (!file) return;
+                    const result = await restoreFromFile(file);
+                    if (result.success) {
+                      toast.success(result.stats || 'Data restored!');
+                    } else {
+                      toast.error(result.error || 'Restore failed');
+                    }
+                  };
+                  input.click();
+                }}
+              >
+                <FileUp className="h-3.5 w-3.5 mr-1" /> Restore File
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Danger zone */}
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <Button variant="outline" className="w-full touch-target" onClick={handleExportAll}>
             <Download className="h-4 w-4 mr-2" /> Export All Plans as PDF

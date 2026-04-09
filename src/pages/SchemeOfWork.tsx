@@ -409,8 +409,8 @@ export default function SchemeOfWork() {
                 )}
 
                 {/* Save button */}
-                <div className="fixed bottom-[6.5rem] left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-md border-t border-border safe-bottom z-40">
-                  <Button className="w-full touch-target" onClick={handleSave}>
+                <div className="sticky bottom-[6.5rem] z-40 mx-4 mb-4 rounded-2xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur-md safe-bottom">
+                  <Button className="w-full touch-target shrink-0" onClick={handleSave}>
                     <Save className="h-4 w-4 mr-1" /> {editingId ? 'Update Full Year' : 'Save Full Year Scheme'}
                   </Button>
                 </div>
