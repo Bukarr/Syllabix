@@ -443,7 +443,7 @@ export default function CopyNoteGenerator() {
   // Setup screen
   if (!setupDone) {
     return (
-      <div className="pb-24 px-4 pt-4">
+      <div className="pb-32 px-4 pt-4">
         <div className="mb-6">
           <h1 className="text-xl font-heading font-bold text-foreground flex items-center gap-2">
             <PenLine className="h-5 w-5 text-primary" />
@@ -539,9 +539,9 @@ export default function CopyNoteGenerator() {
   const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)]">
+    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card/80 backdrop-blur-sm">
+      <div className="shrink-0 flex items-center justify-between px-4 py-2 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="flex items-center gap-2 min-w-0">
           <button onClick={() => { setSetupDone(false); setMessages([]); setCurrentNoteId(null); setIsEditing(false); }} className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Back</button>
           <div className="flex gap-1.5 overflow-hidden">
@@ -603,8 +603,8 @@ export default function CopyNoteGenerator() {
       </div>
 
       {/* Main content area */}
-      <ScrollArea className="flex-1 px-4">
-        <div className="py-4 space-y-4">
+      <ScrollArea className="min-h-0 flex-1 px-4">
+        <div className="space-y-4 py-4 pb-36">
           {messages.length === 0 && (
             <div className="text-center py-12">
               <PenLine className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
@@ -679,11 +679,11 @@ export default function CopyNoteGenerator() {
       </ScrollArea>
 
       {/* Chat input */}
-      <div className="px-4 py-3 border-t border-border bg-card/95 backdrop-blur-md safe-bottom">
-        <div className="flex gap-2 items-end">
+      <div className="sticky bottom-[6.5rem] z-40 mx-4 mb-4 rounded-2xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur-md safe-bottom">
+        <div className="flex items-end gap-2 overflow-x-auto">
           <Textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
             placeholder={isEditing ? "Ask AI to improve your note..." : "Type a topic or follow-up instruction..."}
-            className="min-h-[44px] max-h-[120px] resize-none touch-target flex-1" rows={1} disabled={isStreaming} />
+            className="min-h-[44px] min-w-0 max-h-[120px] resize-none touch-target flex-1" rows={1} disabled={isStreaming} />
           <Button onClick={() => sendMessage(input)} disabled={!input.trim() || isStreaming} className="touch-target shrink-0 h-11 w-11 p-0">
             {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>

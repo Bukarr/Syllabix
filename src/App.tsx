@@ -1,7 +1,8 @@
+import { useEffect, useRef } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { TopBar, BottomNav } from "@/components/AppShell";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
@@ -20,11 +21,59 @@ import Collaborate from "./pages/Collaborate";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
+import { getProfile } from "./lib/db";
 
 // Init notification scheduling on app start
 initNotifications();
 
 const queryClient = new QueryClient();
+const FLOW_READY_KEY = "syllabix:flow-ready";
+const LAST_ROUTE_KEY = "syllabix:last-route";
+
+function FlowPersistence() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const restoredRef = useRef(false);
+
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+
+    const hasVisited = sessionStorage.getItem(FLOW_READY_KEY) === "true";
+    sessionStorage.setItem(FLOW_READY_KEY, "true");
+
+    const canRestoreFrom = location.pathname === "/" || location.pathname === "/onboarding";
+    if (!hasVisited || !canRestoreFrom) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      const profile = await getProfile();
+      const lastRoute = sessionStorage.getItem(LAST_ROUTE_KEY);
+
+      if (cancelled || !profile?.onboardingComplete) return;
+
+      if (lastRoute && lastRoute !== location.pathname && lastRoute !== "/onboarding") {
+        navigate(lastRoute, { replace: true });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    if (location.pathname === "/onboarding" || location.pathname === "/auth") return;
+
+    sessionStorage.setItem(
+      LAST_ROUTE_KEY,
+      `${location.pathname}${location.search}${location.hash}`,
+    );
+  }, [location.hash, location.pathname, location.search]);
+
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,6 +81,7 @@ const App = () => (
       <Sonner />
       <InstallPrompt />
       <BrowserRouter>
+        <FlowPersistence />
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
