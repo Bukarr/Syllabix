@@ -117,6 +117,47 @@ interface NaijaLessonDB extends DBSchema {
 
 const DB_NAME = 'naijalesson-db';
 const DB_VERSION = 3;
+const PROFILE_BACKUP_KEY = 'syllabix:profile-backup';
+
+function normalizeProfile(profile: Partial<TeacherProfile>): TeacherProfile {
+  return {
+    id: 'default',
+    name: profile.name ?? '',
+    schoolName: profile.schoolName ?? '',
+    schoolType: profile.schoolType === 'private' ? 'private' : 'public',
+    zone: profile.zone ?? '',
+    state: profile.state ?? '',
+    subjects: Array.isArray(profile.subjects) ? profile.subjects : [],
+    classes: Array.isArray(profile.classes) ? profile.classes : [],
+    classSizes: profile.classSizes ?? {},
+    resources: Array.isArray(profile.resources) ? profile.resources : [],
+    language:
+      profile.language === 'yo' || profile.language === 'ig' || profile.language === 'ha'
+        ? profile.language
+        : 'en',
+    onboardingComplete: Boolean(profile.onboardingComplete),
+  };
+}
+
+function readProfileBackup(): TeacherProfile | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const raw = window.localStorage.getItem(PROFILE_BACKUP_KEY);
+    if (!raw) return undefined;
+    return normalizeProfile(JSON.parse(raw) as Partial<TeacherProfile>);
+  } catch {
+    return undefined;
+  }
+}
+
+function writeProfileBackup(profile: TeacherProfile) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(PROFILE_BACKUP_KEY, JSON.stringify(normalizeProfile(profile)));
+  } catch {
+    // Ignore storage write failures and keep IndexedDB as the primary store.
+  }
+}
 
 export async function getDB() {
   return openDB<NaijaLessonDB>(DB_NAME, DB_VERSION, {
@@ -156,13 +197,37 @@ export async function getDB() {
 
 // Profile operations
 export async function getProfile(): Promise<TeacherProfile | undefined> {
-  const db = await getDB();
-  return db.get('profile', 'default');
+  const backup = readProfileBackup();
+  try {
+    const db = await getDB();
+    const profile = await db.get('profile', 'default');
+
+    if (profile) {
+      const normalizedProfile = normalizeProfile(profile);
+      writeProfileBackup(normalizedProfile);
+      return normalizedProfile;
+    }
+
+    if (backup) {
+      await db.put('profile', backup);
+    }
+
+    return backup;
+  } catch {
+    return backup;
+  }
 }
 
 export async function saveProfile(profile: TeacherProfile): Promise<void> {
-  const db = await getDB();
-  await db.put('profile', { ...profile, id: 'default' });
+  const normalizedProfile = normalizeProfile(profile);
+  writeProfileBackup(normalizedProfile);
+
+  try {
+    const db = await getDB();
+    await db.put('profile', normalizedProfile);
+  } catch {
+    // Keep the local backup so onboarding state survives app reloads.
+  }
 }
 
 // Lesson plan operations

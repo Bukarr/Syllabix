@@ -6,7 +6,7 @@ import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { saveProfile, type TeacherProfile } from '@/lib/db';
+import { getProfile, saveProfile, type TeacherProfile } from '@/lib/db';
 import { SCHOOL_LEVELS, CLASSES, SUBJECTS, GEOPOLITICAL_ZONES, STATES, CLASSROOM_RESOURCES } from '@/lib/curriculum';
 import heroImage from '@/assets/hero-classroom.jpg';
 import { profileSchema, type ValidationErrors } from '@/lib/validation';
@@ -32,6 +32,26 @@ export default function Onboarding() {
 
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [errors, setErrors] = useState<ValidationErrors>({});
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      const existingProfile = await getProfile();
+      if (!active || !existingProfile) return;
+
+      if (existingProfile.onboardingComplete) {
+        navigate('/', { replace: true });
+        return;
+      }
+
+      setProfile(prev => ({ ...prev, ...existingProfile }));
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const canProceed = () => {
     switch (step) {
