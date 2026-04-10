@@ -15,6 +15,7 @@ import { exportAINoteToPDF, exportAINotesBulkToPDF } from '@/lib/export';
 import { parseNoteToSections, sectionsToPlainText, stripMarkdown } from '@/lib/note-formatter';
 import { CLASSES, SCHOOL_LEVELS, SUBJECTS, TERMS } from '@/lib/curriculum';
 import { toast } from 'sonner';
+import { trackActivity } from '@/lib/ai-personalization';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/copy-note-chat`;
 
