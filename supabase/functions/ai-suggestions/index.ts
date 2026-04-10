@@ -169,8 +169,9 @@ Generate personalized suggestions based on their usage patterns.`
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message, suggestions: [] }), {
-      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    console.error("ai-suggestions error:", error);
+    return new Response(JSON.stringify({ error: 'Internal server error', suggestions: [] }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
