@@ -198,6 +198,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_current_school_code: { Args: never; Returns: string }
+      get_my_profile_role: { Args: never; Returns: string }
       get_my_school_code: { Args: never; Returns: string }
       get_user_school_code: { Args: { _user_id: string }; Returns: string }
     }
