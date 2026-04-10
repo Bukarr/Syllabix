@@ -3,16 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   BookOpen, FileText, CheckCircle2, Clock, TrendingUp,
-  Plus, ChevronRight, Flame, Calendar
+  Plus, ChevronRight, Flame, Calendar, Sparkles, X, Lightbulb
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getProfile, getAllLessonPlans, type TeacherProfile, type LessonPlan } from '@/lib/db';
+import { fetchSuggestions, dismissSuggestion, trackActivity } from '@/lib/ai-personalization';
+
+interface AISuggestion {
+  id?: string;
+  type: string;
+  title: string;
+  description: string;
+  action_route: string;
+  action_data: Record<string, unknown>;
+  priority: number;
+}
+
+const typeIcons: Record<string, typeof Lightbulb> = {
+  lesson: Plus,
+  curriculum_gap: BookOpen,
+  review: FileText,
+  explore: Sparkles,
+  streak: Flame,
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [plans, setPlans] = useState<LessonPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -25,6 +46,19 @@ export default function Dashboard() {
       const lps = await getAllLessonPlans();
       setPlans(lps);
       setLoading(false);
+
+      // Track dashboard visit
+      trackActivity({ feature: 'dashboard' });
+
+      // Fetch AI suggestions in background
+      setLoadingSuggestions(true);
+      try {
+        const result = await fetchSuggestions();
+        if (result.suggestions?.length) {
+          setSuggestions(result.suggestions);
+        }
+      } catch { /* silent */ }
+      setLoadingSuggestions(false);
     }
     load();
   }, [navigate]);
@@ -42,10 +76,8 @@ export default function Dashboard() {
   const totalSubjects = profile.subjects.length;
   const weeklyTarget = totalSubjects;
 
-  // Calculate streak from actual data — starts at 0
   const calculateStreak = () => {
     if (plans.length === 0) return 0;
-    // Find the highest week number with completed plans
     const maxWeek = Math.max(...plans.filter(p => p.status === 'complete').map(p => p.week), 0);
     let streak = 0;
     for (let w = maxWeek; w >= 1; w--) {
@@ -60,11 +92,20 @@ export default function Dashboard() {
   };
   const streak = calculateStreak();
 
-  // Term progress is driven by streak (completed weeks), not a hardcoded current week
   const currentWeek = streak;
   const weeklyCompleted = currentWeek > 0
     ? plans.filter(p => p.week === currentWeek && p.status === 'complete').length
     : 0;
+
+  const handleSuggestionClick = (s: AISuggestion) => {
+    trackActivity({ feature: 'suggestion_clicked', metadata: { type: s.type, title: s.title } });
+    navigate(s.action_route);
+  };
+
+  const handleDismiss = async (s: AISuggestion, idx: number) => {
+    setSuggestions(prev => prev.filter((_, i) => i !== idx));
+    if (s.id) await dismissSuggestion(s.id);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -75,14 +116,69 @@ export default function Dashboard() {
     show: { opacity: 1, y: 0 },
   };
 
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <div className="pb-32 px-4 pt-4">
       <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-5">
         {/* Greeting */}
         <motion.div variants={itemVariants}>
-          <p className="text-muted-foreground text-sm">Good morning,</p>
+          <p className="text-muted-foreground text-sm">{getGreeting()},</p>
           <h2 className="text-2xl font-heading font-bold">{profile.name.split(' ').pop()}</h2>
         </motion.div>
+
+        {/* AI Suggestions */}
+        {suggestions.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-heading font-semibold">AI Suggestions</h3>
+            </div>
+            <div className="space-y-2">
+              {suggestions.slice(0, 3).map((s, idx) => {
+                const Icon = typeIcons[s.type] || Lightbulb;
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="glass-card rounded-xl p-3 flex items-start gap-3 group"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <button
+                      className="flex-1 text-left min-w-0"
+                      onClick={() => handleSuggestionClick(s)}
+                    >
+                      <p className="text-sm font-medium truncate">{s.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{s.description}</p>
+                    </button>
+                    <button
+                      onClick={() => handleDismiss(s, idx)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                    >
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {loadingSuggestions && suggestions.length === 0 && (
+          <motion.div variants={itemVariants} className="glass-card rounded-xl p-4 flex items-center gap-3">
+            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+            <span className="text-xs text-muted-foreground">Generating personalized suggestions…</span>
+          </motion.div>
+        )}
 
         {/* Term progress card */}
         <motion.div variants={itemVariants} className="glass-card rounded-2xl p-5">
