@@ -269,6 +269,7 @@ export default function CopyNoteGenerator() {
                 updatedAt: now,
               };
               await saveAINote(note);
+              trackActivity({ feature: 'ai-notes', subject, classLevel: selectedClass });
               setCurrentNoteId(noteId);
               const notes = await getAllAINotes();
               setAiNotes(notes);
