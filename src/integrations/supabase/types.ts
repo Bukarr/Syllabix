@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_suggestions: {
+        Row: {
+          action_data: Json | null
+          action_route: string | null
+          created_at: string
+          description: string | null
+          dismissed: boolean | null
+          expires_at: string | null
+          id: string
+          priority: number | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_data?: Json | null
+          action_route?: string | null
+          created_at?: string
+          description?: string | null
+          dismissed?: boolean | null
+          expires_at?: string | null
+          id?: string
+          priority?: number | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_data?: Json | null
+          action_route?: string | null
+          created_at?: string
+          description?: string | null
+          dismissed?: boolean | null
+          expires_at?: string | null
+          id?: string
+          priority?: number | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -115,6 +157,39 @@ export type Database = {
           user_id?: string
           weeks?: Json
           year?: string
+        }
+        Relationships: []
+      }
+      user_activity: {
+        Row: {
+          class_level: string | null
+          created_at: string
+          feature: string
+          id: string
+          metadata: Json | null
+          subject: string | null
+          topic: string | null
+          user_id: string
+        }
+        Insert: {
+          class_level?: string | null
+          created_at?: string
+          feature: string
+          id?: string
+          metadata?: Json | null
+          subject?: string | null
+          topic?: string | null
+          user_id: string
+        }
+        Update: {
+          class_level?: string | null
+          created_at?: string
+          feature?: string
+          id?: string
+          metadata?: Json | null
+          subject?: string | null
+          topic?: string | null
+          user_id?: string
         }
         Relationships: []
       }
