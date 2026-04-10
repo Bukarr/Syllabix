@@ -14,6 +14,7 @@ import { VoiceInput } from '@/components/VoiceInput';
 import { AssessmentGenerator } from '@/components/AssessmentGenerator';
 import { ResourceRecommendations } from '@/components/ResourceRecommendations';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { trackActivity } from '@/lib/ai-personalization';
 
 const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
 
@@ -252,6 +253,7 @@ export default function LessonPlanForm() {
       updatedAt: new Date().toISOString(),
     };
     await saveLessonPlan(fullPlan);
+    trackActivity({ feature: 'lesson-plan', subject: plan.subject as string, classLevel: plan.classLevel as string, topic: plan.topic as string });
     toast.success(status === 'complete' ? 'Lesson note saved!' : 'Draft saved');
     if (status === 'complete') navigate('/');
   };

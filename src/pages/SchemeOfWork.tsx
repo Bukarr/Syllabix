@@ -13,6 +13,7 @@ import {
 } from '@/lib/db';
 import { SUBJECTS, CLASSES } from '@/lib/curriculum';
 import { exportSOWToPDF } from '@/lib/export';
+import { trackActivity } from '@/lib/ai-personalization';
 import { toast } from 'sonner';
 
 type WeekEntry = SOWType['weeks'][number] & { comment?: string };
@@ -113,6 +114,7 @@ export default function SchemeOfWork() {
         createdAt: existingSow?.createdAt || new Date().toISOString(),
       };
       await saveSOW(sow);
+      trackActivity({ feature: 'scheme', subject: sow.subject, classLevel: sow.classLevel });
     }
 
     toast.success('Full-year Scheme of Work saved!');
