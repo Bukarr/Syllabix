@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import logoIcon from '@/assets/logo-icon.png';
+import logoIcon from '@/assets/logo-icon.jpg';
 
 interface AppLogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
