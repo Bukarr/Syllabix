@@ -58,7 +58,7 @@ export default function Auth() {
       >
         <div className="text-center space-y-2">
           <AppLogo size="xl" className="mx-auto" />
-          <h1 className="text-2xl font-heading font-bold">Syllabix NG</h1>
+          <h1 className="text-2xl font-heading font-bold">Syllabix<sub className="text-[0.6em] align-baseline relative -bottom-1">NG</sub></h1>
           <p className="text-sm text-muted-foreground">
             {mode === 'login' ? 'Sign in to collaborate' : 'Create your account'}
           </p>

@@ -124,7 +124,7 @@ export function BottomNav() {
               <div className="flex items-center justify-between p-5 border-b border-border/50">
                 <div className="flex items-center gap-2.5">
                   <AppLogo size="sm" />
-                  <span className="font-heading font-bold text-base">Syllabix NG</span>
+                  <span className="font-heading font-bold text-base">Syllabix<sub className="text-[0.6em]">NG</sub></span>
                 </div>
                 <button
                   onClick={() => setDrawerOpen(false)}
@@ -174,7 +174,7 @@ export function BottomNav() {
 
                 {/* Version info */}
                 <div className="pt-4 px-3 border-t border-border/30">
-                  <p className="text-[10px] text-muted-foreground/60">Syllabix NG v2.0</p>
+                  <p className="text-[10px] text-muted-foreground/60">Syllabix<sub>NG</sub> v2.0</p>
                 </div>
               </div>
             </motion.div>
@@ -190,7 +190,7 @@ export function TopBar() {
     <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/90 backdrop-blur-xl">
       <div className="flex items-center gap-2">
         <AppLogo size="sm" />
-        <h1 className="text-lg font-heading font-bold text-foreground">Syllabix NG</h1>
+        <h1 className="text-lg font-heading font-bold text-foreground">Syllabix<sub className="text-[0.6em]">NG</sub></h1>
       </div>
       <OnlineIndicator />
     </header>
