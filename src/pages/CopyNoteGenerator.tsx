@@ -16,6 +16,7 @@ import { parseNoteToSections, sectionsToPlainText, stripMarkdown } from '@/lib/n
 import { CLASSES, SCHOOL_LEVELS, SUBJECTS, TERMS } from '@/lib/curriculum';
 import { toast } from 'sonner';
 import { trackActivity } from '@/lib/ai-personalization';
+import { supabase } from '@/integrations/supabase/client';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/copy-note-chat`;
 
@@ -25,9 +26,11 @@ async function streamChat({
   messages: ChatMessage[]; classLevel: string; subject: string;
   onDelta: (text: string) => void; onDone: () => void; onError: (err: string) => void;
 }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { onError('Please sign in to use AI'); return; }
   const resp = await fetch(CHAT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
     body: JSON.stringify({ messages, classLevel, subject }),
   });
 
