@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CLASSES, SCHOOL_LEVELS, SUBJECTS } from '@/lib/curriculum';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const REVIEW_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/review-lesson`;
 
@@ -53,11 +54,13 @@ export default function LessonReviewer() {
     setImprovedPlan('');
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Please sign in to review lessons'); setIsReviewing(false); return; }
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ lessonPlan, classLevel, subject }),
       });
@@ -87,11 +90,13 @@ export default function LessonReviewer() {
     const fullInput = `${lessonPlan}\n\n--- AI REVIEW ---\n${review.summary}\n\nSuggested Improvements:\n${review.suggestedImprovements.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Please sign in to use AI'); setIsImproving(false); return; }
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ lessonPlan: fullInput, classLevel, subject, action: 'improve' }),
       });
