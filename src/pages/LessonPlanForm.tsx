@@ -15,6 +15,7 @@ import { AssessmentGenerator } from '@/components/AssessmentGenerator';
 import { ResourceRecommendations } from '@/components/ResourceRecommendations';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { trackActivity } from '@/lib/ai-personalization';
+import { supabase } from '@/integrations/supabase/client';
 
 const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
 
@@ -158,11 +159,13 @@ export default function LessonPlanForm() {
     }
     setIsGenerating(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Please sign in to use AI generation'); setIsGenerating(false); return; }
       const resp = await fetch(GENERATE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           subject: plan.subject,

@@ -9,6 +9,7 @@ import { useOnlineStatus } from '@/hooks/use-online-status';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import { getProfile } from '@/lib/db';
+import { supabase } from '@/integrations/supabase/client';
 
 const ASSESSMENT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-assessment`;
 
@@ -56,11 +57,13 @@ export function AssessmentGenerator({ open, onOpenChange, subject, classLevel, t
     setResult(null);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Please sign in to generate assessments'); setIsGenerating(false); return; }
       const resp = await fetch(ASSESSMENT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ subject, classLevel, topic, subTopic, assessmentType, questionCount: parseInt(questionCount), difficulty }),
       });

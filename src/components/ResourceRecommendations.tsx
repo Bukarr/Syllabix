@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { saveResource, type SavedResource } from '@/lib/db-resources';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Resource {
   title: string;
@@ -45,11 +46,13 @@ export function ResourceRecommendations({ subject, classLevel, topic, visible }:
   async function fetchResources() {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); setFetched(true); return; }
       const resp = await fetch(RESOURCES_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ subject, classLevel, topic }),
       });
