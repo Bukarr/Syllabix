@@ -58,12 +58,13 @@ export function AssessmentGenerator({ open, onOpenChange, subject, classLevel, t
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Please sign in to generate assessments'); setIsGenerating(false); return; }
+      const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const resp = await fetch(ASSESSMENT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ subject, classLevel, topic, subTopic, assessmentType, questionCount: parseInt(questionCount), difficulty }),
       });
