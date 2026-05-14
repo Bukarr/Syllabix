@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
@@ -16,6 +16,30 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Auto-redirect recognized/logged-in devices straight into the app.
+  useEffect(() => {
+    let active = true;
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active && session) navigate('/', { replace: true });
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
+      if (session) {
+        navigate('/', { replace: true });
+      } else {
+        setCheckingSession(false);
+      }
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +72,14 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
