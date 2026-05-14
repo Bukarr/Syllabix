@@ -55,12 +55,13 @@ export default function LessonReviewer() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Please sign in to review lessons'); setIsReviewing(false); return; }
+      const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ lessonPlan, classLevel, subject }),
       });
@@ -91,12 +92,13 @@ export default function LessonReviewer() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Please sign in to use AI'); setIsImproving(false); return; }
+      const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ lessonPlan: fullInput, classLevel, subject, action: 'improve' }),
       });
