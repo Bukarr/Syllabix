@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
 
 const GENERATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-lesson`;
+const DRAFT_KEY = 'syllabix:current-lesson-draft-id';
 
 export default function LessonPlanForm() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function LessonPlanForm() {
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [sows, setSows] = useState<SchemeOfWork[]>([]);
+  const [planId, setPlanId] = useState<string | null>(null);
   const [plan, setPlan] = useState<Partial<LessonPlan>>({
     subject: '',
     classLevel: '',
@@ -65,9 +67,25 @@ export default function LessonPlanForm() {
       if (p) setProfile(p);
       setSows(s);
       setClassGroups(groups);
+      // 1. Explicit edit param wins
       if (editId) {
         const existing = plans.find(lp => lp.id === editId);
-        if (existing) setPlan(existing);
+        if (existing) {
+          setPlan(existing);
+          setPlanId(existing.id);
+        }
+        return;
+      }
+      // 2. Otherwise resume the last in-progress draft (works for anonymous users too)
+      const resumeId = localStorage.getItem(DRAFT_KEY);
+      if (resumeId) {
+        const existing = plans.find(lp => lp.id === resumeId && lp.status === 'draft');
+        if (existing) {
+          setPlan(existing);
+          setPlanId(existing.id);
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+        }
       }
     });
   }, [editId]);
@@ -236,7 +254,7 @@ export default function LessonPlanForm() {
       }
     }
     const fullPlan: LessonPlan = {
-      id: editId || plan.id || crypto.randomUUID(),
+      id: editId || planId || plan.id || crypto.randomUUID(),
       subject: plan.subject || '',
       classLevel: plan.classLevel || '',
       term: plan.term || 1,
@@ -257,6 +275,12 @@ export default function LessonPlanForm() {
       updatedAt: new Date().toISOString(),
     };
     await saveLessonPlan(fullPlan);
+    setPlanId(fullPlan.id);
+    if (status === 'draft') {
+      localStorage.setItem(DRAFT_KEY, fullPlan.id);
+    } else {
+      localStorage.removeItem(DRAFT_KEY);
+    }
     trackActivity({ feature: 'lesson-plan', subject: plan.subject as string, classLevel: plan.classLevel as string, topic: plan.topic as string });
     toast.success(status === 'complete' ? 'Lesson note saved!' : 'Draft saved');
     if (status === 'complete') navigate('/');
