@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import logoIcon from '@/assets/logo-icon.jpg';
+import logoIcon from '@/assets/logo-icon.png';
 
 interface AppLogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -17,15 +17,19 @@ const sizeMap = {
 export function AppLogo({ size = 'sm', className }: AppLogoProps) {
   const s = sizeMap[size];
   return (
-    <img
-      src={logoIcon}
-      alt="Syllabix"
+    <div
       className={cn(
         s.container,
         s.rounded,
-        'object-contain shrink-0',
+        'bg-primary flex items-center justify-center shrink-0 overflow-hidden',
         className
       )}
-    />
+    >
+      <img
+        src={logoIcon}
+        alt="Syllabix"
+        className="h-[78%] w-[78%] object-contain"
+      />
+    </div>
   );
 }
