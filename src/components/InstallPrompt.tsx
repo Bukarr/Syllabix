@@ -75,7 +75,7 @@ const InstallPrompt = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">
-            Install Syllabix<sup className="text-[0.6em]">NG</sup>
+            Install Syllabix
           </p>
           {isIosDevice ? (
             <p className="text-xs text-muted-foreground mt-1">

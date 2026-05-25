@@ -1,6 +1,6 @@
 {
-  "name": "Syllabix NG",
-  "short_name": "Syllabix NG",
+  "name": "Syllabix",
+  "short_name": "Syllabix",
   "description": "Nigerian Lesson Copy Note Generator — Auto-generate pupil lesson notes aligned with the Nigerian curriculum",
   "start_url": "/",
   "display": "standalone",

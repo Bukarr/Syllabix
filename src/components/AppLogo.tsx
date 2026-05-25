@@ -19,11 +19,11 @@ export function AppLogo({ size = 'sm', className }: AppLogoProps) {
   return (
     <img
       src={logoIcon}
-      alt="Syllabix NG"
+      alt="Syllabix"
       className={cn(
         s.container,
         s.rounded,
-        'object-cover shrink-0',
+        'object-contain shrink-0',
         className
       )}
     />

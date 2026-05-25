@@ -416,8 +416,8 @@ export default function LessonPlanForm() {
                 </motion.div>
               )}
 
-              {/* AI Generate Button */}
-              {plan.subject && plan.topic && (
+              {/* AI Generate Button — requires subject, class level, and topic */}
+              {plan.subject && plan.classLevel && plan.topic && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                   {!isOnline && (
                     <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-muted/50 border border-border">
@@ -429,13 +429,13 @@ export default function LessonPlanForm() {
                     onClick={handleAIGenerate}
                     disabled={isGenerating || !isOnline}
                     className="w-full touch-target font-semibold"
-                    variant="outline"
+                    variant="default"
                     size="lg"
                   >
                     {isGenerating ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating with AI...</>
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating plan for {plan.classLevel}...</>
                     ) : (
-                      <><BookOpen className="h-4 w-4 mr-2" />Generate with AI</>
+                      <><BookOpen className="h-4 w-4 mr-2" />Generate Plan with AI for {plan.classLevel}</>
                     )}
                   </Button>
                   <p className="text-[10px] text-muted-foreground text-center mt-1">AI-generated content. Review before use in class.</p>
