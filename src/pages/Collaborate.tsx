@@ -682,6 +682,77 @@ export default function Collaborate() {
                   ))
                 )}
               </TabsContent>
+
+              {/* Members */}
+              <TabsContent value="members" className="space-y-3 mt-4">
+                <div className="glass-card rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <UserCog className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold">Workspace Members ({members.length})</h3>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {isPrivileged(profile?.role)
+                      ? 'You can change other members\u2019 positions and approve shared schemes.'
+                      : 'Only admins, headmasters, and directors can manage roles or approve schemes.'}
+                  </p>
+                </div>
+
+                {members.length === 0 && (
+                  <div className="text-center py-8">
+                    <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No members loaded yet.</p>
+                  </div>
+                )}
+
+                {members.map(m => {
+                  const isMe = m.user_id === user?.id;
+                  const canEdit = isPrivileged(profile?.role) && !isMe;
+                  return (
+                    <div key={m.user_id} className="glass-card rounded-xl p-3 flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                        <span className="text-sm font-semibold text-primary">
+                          {(m.display_name || 'T').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">
+                          {m.display_name || 'Unnamed Teacher'} {isMe && <span className="text-[10px] text-muted-foreground">(you)</span>}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {isPrivileged(m.role) ? (
+                            <Crown className="h-3 w-3 text-primary" />
+                          ) : null}
+                          <span className="text-[11px] text-muted-foreground">
+                            {ROLE_LABEL[m.role] || m.role}
+                          </span>
+                        </div>
+                      </div>
+                      {canEdit ? (
+                        <Select
+                          value={m.role}
+                          onValueChange={(v) => handleChangeMemberRole(m.user_id, v as RoleOption)}
+                          disabled={updatingRole === m.user_id}
+                        >
+                          <SelectTrigger className="w-[140px] h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLE_OPTIONS.map(r => (
+                              <SelectItem key={r} value={r} className="text-xs">
+                                {ROLE_LABEL[r]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">
+                          {ROLE_LABEL[m.role] || m.role}
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </TabsContent>
             </Tabs>
           </>
         )}
