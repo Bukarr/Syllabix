@@ -395,6 +395,11 @@ export default function Collaborate() {
               <Shield className="h-3 w-3 mr-1" /> Admin
             </Badge>
           )}
+          {profile && isPrivileged(profile.role) && profile.role !== 'admin' && (
+            <Badge variant="secondary" className="text-[10px]">
+              <Crown className="h-3 w-3 mr-1" /> {ROLE_LABEL[profile.role]}
+            </Badge>
+          )}
         </div>
 
         {/* Sync status banner */}
@@ -527,9 +532,10 @@ export default function Collaborate() {
             </div>
 
             <Tabs defaultValue="shared" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-9">
+              <TabsList className="grid w-full grid-cols-3 h-9">
                 <TabsTrigger value="shared" className="text-xs"><BookOpen className="h-3 w-3 mr-1" />Shared Schemes</TabsTrigger>
                 <TabsTrigger value="share" className="text-xs"><Share2 className="h-3 w-3 mr-1" />Share Yours</TabsTrigger>
+                <TabsTrigger value="members" className="text-xs"><Users className="h-3 w-3 mr-1" />Members</TabsTrigger>
               </TabsList>
 
               {/* Shared Schemes */}
@@ -588,7 +594,7 @@ export default function Collaborate() {
                               <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleForkScheme(scheme)}>
                                 <Copy className="h-3 w-3 mr-1" /> Fork & Adapt
                               </Button>
-                              {profile?.role === 'admin' && scheme.status !== 'approved' && (
+                              {isPrivileged(profile?.role) && scheme.status !== 'approved' && (
                                 <Button size="sm" className="text-xs" onClick={() => handleApprove(scheme.id)}>
                                   Approve
                                 </Button>
