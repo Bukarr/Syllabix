@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin, Check, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
 import { getAllClassGroups, getWeakTopics, type ClassGroup } from '@/lib/db-tracker';
 import { toast } from 'sonner';
@@ -53,6 +54,9 @@ export default function LessonPlanForm() {
   // AI generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [curriculumPosition, setCurriculumPosition] = useState('');
+
+  // AI review modal
+  const [aiDraft, setAiDraft] = useState<any | null>(null);
   
   // Assessment modal
   const [showAssessment, setShowAssessment] = useState(false);
@@ -167,8 +171,9 @@ export default function LessonPlanForm() {
   };
 
   const handleAIGenerate = async () => {
-    if (!plan.subject || !plan.classLevel || !plan.topic) {
-      toast.error('Please fill in subject, class level, and topic first');
+    const hasObjective = (plan.objectives || []).some(o => o.trim().length > 0);
+    if (!plan.subject || !plan.classLevel || !plan.topic || !hasObjective) {
+      toast.error('Please enter subject, class level, topic, and at least one objective');
       return;
     }
     if (!isOnline) {
@@ -204,27 +209,37 @@ export default function LessonPlanForm() {
       }
 
       const data = await resp.json();
-      setPlan(prev => ({
-        ...prev,
-        objectives: data.objectives || prev.objectives,
-        entryBehaviour: data.entryBehaviour || prev.entryBehaviour,
-        materials: data.materials || prev.materials,
-        references: data.references || prev.references,
-        steps: data.steps || prev.steps,
-        evaluation: data.evaluation || prev.evaluation,
-        assignment: data.assignment || prev.assignment,
-      }));
-      if (data.curriculumPosition) {
-        setCurriculumPosition(data.curriculumPosition);
-      }
-      toast.success('Lesson note generated! Review and edit as needed.');
-      setShowResources(true);
-      setStep(1);
+      setAiDraft(data);
+      if (data.curriculumPosition) setCurriculumPosition(data.curriculumPosition);
+      toast.success('AI plan ready — review it before accepting');
     } catch (e: any) {
       toast.error(e.message || 'Failed to generate lesson note');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const acceptAIDraft = () => {
+    if (!aiDraft) return;
+    setPlan(prev => ({
+      ...prev,
+      objectives: aiDraft.objectives?.length ? aiDraft.objectives : prev.objectives,
+      entryBehaviour: aiDraft.entryBehaviour || prev.entryBehaviour,
+      materials: aiDraft.materials || prev.materials,
+      references: aiDraft.references || prev.references,
+      steps: aiDraft.steps || prev.steps,
+      evaluation: aiDraft.evaluation || prev.evaluation,
+      assignment: aiDraft.assignment || prev.assignment,
+    }));
+    setAiDraft(null);
+    setShowResources(true);
+    setStep(1);
+    toast.success('Plan accepted — edit any section as needed');
+  };
+
+  const discardAIDraft = () => {
+    setAiDraft(null);
+    toast.info('AI plan discarded');
   };
 
   const handleVoiceTranscription = (text: string) => {
