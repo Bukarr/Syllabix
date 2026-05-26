@@ -456,7 +456,24 @@ export default function LessonPlanForm() {
               )}
 
               {/* AI Generate Button — requires subject, class level, and topic */}
-              {plan.subject && plan.classLevel && plan.topic && (
+              <div>
+                <Label className="text-sm font-medium">Lesson Objectives</Label>
+                <p className="text-xs text-muted-foreground mb-1.5">One per line — what pupils should learn</p>
+                <Textarea
+                  placeholder={"e.g.\nDefine whole numbers\nAdd 2-digit numbers without carrying"}
+                  value={(plan.objectives || []).join('\n')}
+                  onChange={e =>
+                    updatePlan(
+                      'objectives',
+                      e.target.value.split('\n').map(s => s).filter((v, i, a) => i < a.length)
+                    )
+                  }
+                  rows={3}
+                  className="touch-target"
+                />
+              </div>
+
+              {plan.subject && plan.classLevel && plan.topic && (plan.objectives || []).some(o => o.trim()) && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                   {!isOnline && (
                     <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-muted/50 border border-border">
@@ -474,10 +491,10 @@ export default function LessonPlanForm() {
                     {isGenerating ? (
                       <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating plan for {plan.classLevel}...</>
                     ) : (
-                      <><BookOpen className="h-4 w-4 mr-2" />Generate Plan with AI for {plan.classLevel}</>
+                      <><Sparkles className="h-4 w-4 mr-2" />Generate Lesson Plan with AI</>
                     )}
                   </Button>
-                  <p className="text-[10px] text-muted-foreground text-center mt-1">AI-generated content. Review before use in class.</p>
+                  <p className="text-[10px] text-muted-foreground text-center mt-1">You'll review the plan before it's applied.</p>
                 </motion.div>
               )}
             </div>
