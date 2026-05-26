@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   Share2, MessageSquare, Send, Trash2, Copy, Users,
   BookOpen, ChevronDown, ChevronUp, Loader2, LogIn, Shield,
-  Plus, Clipboard, Check, CloudOff, RefreshCw
+  Plus, Clipboard, Check, CloudOff, RefreshCw, UserCog, Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { getAllSOW, type SchemeOfWork as SOWType } from '@/lib/db';
@@ -47,6 +48,20 @@ interface Profile {
   role: string;
 }
 
+const ROLE_OPTIONS = ['teacher', 'headmaster', 'director', 'admin', 'other'] as const;
+type RoleOption = typeof ROLE_OPTIONS[number];
+
+const ROLE_LABEL: Record<string, string> = {
+  teacher: 'Teacher',
+  headmaster: 'Headmaster / Headmistress',
+  director: 'Director',
+  admin: 'Admin',
+  other: 'Other',
+};
+
+const ROLE_RANK: Record<string, number> = { admin: 4, director: 3, headmaster: 2, teacher: 1, other: 0 };
+const isPrivileged = (role?: string) => role === 'admin' || role === 'headmaster' || role === 'director';
+
 function generateWorkspaceCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const segments = [4, 3, 3];
@@ -75,6 +90,8 @@ export default function Collaborate() {
   const [showCreate, setShowCreate] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
+  const [members, setMembers] = useState<Profile[]>([]);
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -109,6 +126,7 @@ export default function Collaborate() {
       setJoinCode(data.school_code || '');
       if (data.school_code) {
         await loadSharedSchemes();
+        await loadMembers(data.school_code);
       }
     }
   };
@@ -133,6 +151,37 @@ export default function Collaborate() {
         }
       }
     }
+  };
+
+  const loadMembers = async (schoolCode: string) => {
+    if (!schoolCode) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, school_code, role')
+      .eq('school_code', schoolCode);
+    if (data) {
+      const sorted = [...(data as Profile[])].sort((a, b) =>
+        (ROLE_RANK[b.role] ?? 0) - (ROLE_RANK[a.role] ?? 0) ||
+        (a.display_name || '').localeCompare(b.display_name || '')
+      );
+      setMembers(sorted);
+    }
+  };
+
+  const handleChangeMemberRole = async (targetUserId: string, newRole: RoleOption) => {
+    setUpdatingRole(targetUserId);
+    const { error } = await supabase.rpc('set_member_role', {
+      _target_user_id: targetUserId,
+      _new_role: newRole,
+    });
+    setUpdatingRole(null);
+    if (error) {
+      toast.error(error.message || 'Failed to update role');
+      return;
+    }
+    toast.success('Role updated');
+    if (profile?.school_code) await loadMembers(profile.school_code);
+    if (targetUserId === user?.id) await loadProfile(targetUserId);
   };
 
   const loadComments = async (schemeId: string) => {
@@ -294,7 +343,7 @@ export default function Collaborate() {
   };
 
   const handleApprove = async (schemeId: string) => {
-    if (profile?.role !== 'admin') return;
+    if (!isPrivileged(profile?.role)) return;
     await supabase
       .from('shared_schemes')
       .update({ status: 'approved' })
