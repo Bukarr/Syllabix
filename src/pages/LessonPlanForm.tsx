@@ -682,6 +682,79 @@ export default function LessonPlanForm() {
         topic={plan.topic || ''}
         subTopic={plan.subTopic}
       />
+
+      {/* AI Review Modal — user must accept before plan is applied */}
+      <Dialog open={!!aiDraft} onOpenChange={(o) => !o && setAiDraft(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Review AI Lesson Plan
+            </DialogTitle>
+            <DialogDescription>
+              Review the generated plan below. Accept to load it into the editor, or discard to try again.
+            </DialogDescription>
+          </DialogHeader>
+
+          {aiDraft && (
+            <div className="space-y-4 text-sm">
+              {aiDraft.objectives?.length > 0 && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Objectives</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                    {aiDraft.objectives.map((o: string, i: number) => <li key={i}>{o}</li>)}
+                  </ul>
+                </section>
+              )}
+              {aiDraft.entryBehaviour && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Entry Behaviour</h4>
+                  <p className="text-muted-foreground">{aiDraft.entryBehaviour}</p>
+                </section>
+              )}
+              {aiDraft.materials?.length > 0 && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Materials</h4>
+                  <p className="text-muted-foreground">{aiDraft.materials.join(', ')}</p>
+                </section>
+              )}
+              {aiDraft.steps?.length > 0 && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Lesson Steps ({aiDraft.steps.length})</h4>
+                  <ol className="space-y-2 list-decimal pl-5">
+                    {aiDraft.steps.map((s: any, i: number) => (
+                      <li key={i} className="text-muted-foreground">
+                        <p className="text-foreground/90">{s.teacherActivity}</p>
+                        {s.studentActivity && <p className="text-xs mt-0.5 italic">Pupils: {s.studentActivity}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+              {aiDraft.evaluation && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Classwork</h4>
+                  <p className="text-muted-foreground whitespace-pre-line">{aiDraft.evaluation}</p>
+                </section>
+              )}
+              {aiDraft.assignment && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Homework</h4>
+                  <p className="text-muted-foreground whitespace-pre-line">{aiDraft.assignment}</p>
+                </section>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={discardAIDraft}>
+              <X className="h-4 w-4 mr-1" /> Discard
+            </Button>
+            <Button onClick={acceptAIDraft}>
+              <Check className="h-4 w-4 mr-1" /> Accept &amp; Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
