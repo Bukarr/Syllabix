@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin, Check, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
 import { getAllClassGroups, getWeakTopics, type ClassGroup } from '@/lib/db-tracker';
 import { toast } from 'sonner';
@@ -53,6 +54,9 @@ export default function LessonPlanForm() {
   // AI generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [curriculumPosition, setCurriculumPosition] = useState('');
+
+  // AI review modal
+  const [aiDraft, setAiDraft] = useState<any | null>(null);
   
   // Assessment modal
   const [showAssessment, setShowAssessment] = useState(false);
@@ -167,8 +171,9 @@ export default function LessonPlanForm() {
   };
 
   const handleAIGenerate = async () => {
-    if (!plan.subject || !plan.classLevel || !plan.topic) {
-      toast.error('Please fill in subject, class level, and topic first');
+    const hasObjective = (plan.objectives || []).some(o => o.trim().length > 0);
+    if (!plan.subject || !plan.classLevel || !plan.topic || !hasObjective) {
+      toast.error('Please enter subject, class level, topic, and at least one objective');
       return;
     }
     if (!isOnline) {
@@ -204,27 +209,37 @@ export default function LessonPlanForm() {
       }
 
       const data = await resp.json();
-      setPlan(prev => ({
-        ...prev,
-        objectives: data.objectives || prev.objectives,
-        entryBehaviour: data.entryBehaviour || prev.entryBehaviour,
-        materials: data.materials || prev.materials,
-        references: data.references || prev.references,
-        steps: data.steps || prev.steps,
-        evaluation: data.evaluation || prev.evaluation,
-        assignment: data.assignment || prev.assignment,
-      }));
-      if (data.curriculumPosition) {
-        setCurriculumPosition(data.curriculumPosition);
-      }
-      toast.success('Lesson note generated! Review and edit as needed.');
-      setShowResources(true);
-      setStep(1);
+      setAiDraft(data);
+      if (data.curriculumPosition) setCurriculumPosition(data.curriculumPosition);
+      toast.success('AI plan ready — review it before accepting');
     } catch (e: any) {
       toast.error(e.message || 'Failed to generate lesson note');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const acceptAIDraft = () => {
+    if (!aiDraft) return;
+    setPlan(prev => ({
+      ...prev,
+      objectives: aiDraft.objectives?.length ? aiDraft.objectives : prev.objectives,
+      entryBehaviour: aiDraft.entryBehaviour || prev.entryBehaviour,
+      materials: aiDraft.materials || prev.materials,
+      references: aiDraft.references || prev.references,
+      steps: aiDraft.steps || prev.steps,
+      evaluation: aiDraft.evaluation || prev.evaluation,
+      assignment: aiDraft.assignment || prev.assignment,
+    }));
+    setAiDraft(null);
+    setShowResources(true);
+    setStep(1);
+    toast.success('Plan accepted — edit any section as needed');
+  };
+
+  const discardAIDraft = () => {
+    setAiDraft(null);
+    toast.info('AI plan discarded');
   };
 
   const handleVoiceTranscription = (text: string) => {
@@ -441,7 +456,19 @@ export default function LessonPlanForm() {
               )}
 
               {/* AI Generate Button — requires subject, class level, and topic */}
-              {plan.subject && plan.classLevel && plan.topic && (
+              <div>
+                <Label className="text-sm font-medium">Lesson Objectives</Label>
+                <p className="text-xs text-muted-foreground mb-1.5">One per line — what pupils should learn</p>
+                <Textarea
+                  placeholder={"e.g.\nDefine whole numbers\nAdd 2-digit numbers without carrying"}
+                  value={(plan.objectives || []).join('\n')}
+                  onChange={e => updatePlan('objectives', e.target.value.split('\n'))}
+                  rows={3}
+                  className="touch-target"
+                />
+              </div>
+
+              {plan.subject && plan.classLevel && plan.topic && (plan.objectives || []).some(o => o.trim()) && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                   {!isOnline && (
                     <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-muted/50 border border-border">
@@ -459,10 +486,10 @@ export default function LessonPlanForm() {
                     {isGenerating ? (
                       <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating plan for {plan.classLevel}...</>
                     ) : (
-                      <><BookOpen className="h-4 w-4 mr-2" />Generate Plan with AI for {plan.classLevel}</>
+                      <><Sparkles className="h-4 w-4 mr-2" />Generate Lesson Plan with AI</>
                     )}
                   </Button>
-                  <p className="text-[10px] text-muted-foreground text-center mt-1">AI-generated content. Review before use in class.</p>
+                  <p className="text-[10px] text-muted-foreground text-center mt-1">You'll review the plan before it's applied.</p>
                 </motion.div>
               )}
             </div>
@@ -655,6 +682,79 @@ export default function LessonPlanForm() {
         topic={plan.topic || ''}
         subTopic={plan.subTopic}
       />
+
+      {/* AI Review Modal — user must accept before plan is applied */}
+      <Dialog open={!!aiDraft} onOpenChange={(o) => !o && setAiDraft(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Review AI Lesson Plan
+            </DialogTitle>
+            <DialogDescription>
+              Review the generated plan below. Accept to load it into the editor, or discard to try again.
+            </DialogDescription>
+          </DialogHeader>
+
+          {aiDraft && (
+            <div className="space-y-4 text-sm">
+              {aiDraft.objectives?.length > 0 && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Objectives</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                    {aiDraft.objectives.map((o: string, i: number) => <li key={i}>{o}</li>)}
+                  </ul>
+                </section>
+              )}
+              {aiDraft.entryBehaviour && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Entry Behaviour</h4>
+                  <p className="text-muted-foreground">{aiDraft.entryBehaviour}</p>
+                </section>
+              )}
+              {aiDraft.materials?.length > 0 && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Materials</h4>
+                  <p className="text-muted-foreground">{aiDraft.materials.join(', ')}</p>
+                </section>
+              )}
+              {aiDraft.steps?.length > 0 && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Lesson Steps ({aiDraft.steps.length})</h4>
+                  <ol className="space-y-2 list-decimal pl-5">
+                    {aiDraft.steps.map((s: any, i: number) => (
+                      <li key={i} className="text-muted-foreground">
+                        <p className="text-foreground/90">{s.teacherActivity}</p>
+                        {s.studentActivity && <p className="text-xs mt-0.5 italic">Pupils: {s.studentActivity}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+              {aiDraft.evaluation && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Classwork</h4>
+                  <p className="text-muted-foreground whitespace-pre-line">{aiDraft.evaluation}</p>
+                </section>
+              )}
+              {aiDraft.assignment && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Homework</h4>
+                  <p className="text-muted-foreground whitespace-pre-line">{aiDraft.assignment}</p>
+                </section>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={discardAIDraft}>
+              <X className="h-4 w-4 mr-1" /> Discard
+            </Button>
+            <Button onClick={acceptAIDraft}>
+              <Check className="h-4 w-4 mr-1" /> Accept &amp; Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

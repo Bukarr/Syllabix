@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   Share2, MessageSquare, Send, Trash2, Copy, Users,
   BookOpen, ChevronDown, ChevronUp, Loader2, LogIn, Shield,
-  Plus, Clipboard, Check, CloudOff, RefreshCw
+  Plus, Clipboard, Check, CloudOff, RefreshCw, UserCog, Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { getAllSOW, type SchemeOfWork as SOWType } from '@/lib/db';
@@ -47,6 +48,20 @@ interface Profile {
   role: string;
 }
 
+const ROLE_OPTIONS = ['teacher', 'headmaster', 'director', 'admin', 'other'] as const;
+type RoleOption = typeof ROLE_OPTIONS[number];
+
+const ROLE_LABEL: Record<string, string> = {
+  teacher: 'Teacher',
+  headmaster: 'Headmaster / Headmistress',
+  director: 'Director',
+  admin: 'Admin',
+  other: 'Other',
+};
+
+const ROLE_RANK: Record<string, number> = { admin: 4, director: 3, headmaster: 2, teacher: 1, other: 0 };
+const isPrivileged = (role?: string) => role === 'admin' || role === 'headmaster' || role === 'director';
+
 function generateWorkspaceCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const segments = [4, 3, 3];
@@ -75,6 +90,8 @@ export default function Collaborate() {
   const [showCreate, setShowCreate] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
+  const [members, setMembers] = useState<Profile[]>([]);
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -109,6 +126,7 @@ export default function Collaborate() {
       setJoinCode(data.school_code || '');
       if (data.school_code) {
         await loadSharedSchemes();
+        await loadMembers(data.school_code);
       }
     }
   };
@@ -133,6 +151,37 @@ export default function Collaborate() {
         }
       }
     }
+  };
+
+  const loadMembers = async (schoolCode: string) => {
+    if (!schoolCode) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, school_code, role')
+      .eq('school_code', schoolCode);
+    if (data) {
+      const sorted = [...(data as Profile[])].sort((a, b) =>
+        (ROLE_RANK[b.role] ?? 0) - (ROLE_RANK[a.role] ?? 0) ||
+        (a.display_name || '').localeCompare(b.display_name || '')
+      );
+      setMembers(sorted);
+    }
+  };
+
+  const handleChangeMemberRole = async (targetUserId: string, newRole: RoleOption) => {
+    setUpdatingRole(targetUserId);
+    const { error } = await supabase.rpc('set_member_role', {
+      _target_user_id: targetUserId,
+      _new_role: newRole,
+    });
+    setUpdatingRole(null);
+    if (error) {
+      toast.error(error.message || 'Failed to update role');
+      return;
+    }
+    toast.success('Role updated');
+    if (profile?.school_code) await loadMembers(profile.school_code);
+    if (targetUserId === user?.id) await loadProfile(targetUserId);
   };
 
   const loadComments = async (schemeId: string) => {
@@ -294,7 +343,7 @@ export default function Collaborate() {
   };
 
   const handleApprove = async (schemeId: string) => {
-    if (profile?.role !== 'admin') return;
+    if (!isPrivileged(profile?.role)) return;
     await supabase
       .from('shared_schemes')
       .update({ status: 'approved' })
@@ -344,6 +393,11 @@ export default function Collaborate() {
           {profile?.role === 'admin' && (
             <Badge variant="secondary" className="text-[10px]">
               <Shield className="h-3 w-3 mr-1" /> Admin
+            </Badge>
+          )}
+          {profile && isPrivileged(profile.role) && profile.role !== 'admin' && (
+            <Badge variant="secondary" className="text-[10px]">
+              <Crown className="h-3 w-3 mr-1" /> {ROLE_LABEL[profile.role]}
             </Badge>
           )}
         </div>
@@ -478,9 +532,10 @@ export default function Collaborate() {
             </div>
 
             <Tabs defaultValue="shared" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-9">
+              <TabsList className="grid w-full grid-cols-3 h-9">
                 <TabsTrigger value="shared" className="text-xs"><BookOpen className="h-3 w-3 mr-1" />Shared Schemes</TabsTrigger>
                 <TabsTrigger value="share" className="text-xs"><Share2 className="h-3 w-3 mr-1" />Share Yours</TabsTrigger>
+                <TabsTrigger value="members" className="text-xs"><Users className="h-3 w-3 mr-1" />Members</TabsTrigger>
               </TabsList>
 
               {/* Shared Schemes */}
@@ -539,7 +594,7 @@ export default function Collaborate() {
                               <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleForkScheme(scheme)}>
                                 <Copy className="h-3 w-3 mr-1" /> Fork & Adapt
                               </Button>
-                              {profile?.role === 'admin' && scheme.status !== 'approved' && (
+                              {isPrivileged(profile?.role) && scheme.status !== 'approved' && (
                                 <Button size="sm" className="text-xs" onClick={() => handleApprove(scheme.id)}>
                                   Approve
                                 </Button>
@@ -626,6 +681,77 @@ export default function Collaborate() {
                     </div>
                   ))
                 )}
+              </TabsContent>
+
+              {/* Members */}
+              <TabsContent value="members" className="space-y-3 mt-4">
+                <div className="glass-card rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <UserCog className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold">Workspace Members ({members.length})</h3>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {isPrivileged(profile?.role)
+                      ? 'You can change other members\u2019 positions and approve shared schemes.'
+                      : 'Only admins, headmasters, and directors can manage roles or approve schemes.'}
+                  </p>
+                </div>
+
+                {members.length === 0 && (
+                  <div className="text-center py-8">
+                    <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No members loaded yet.</p>
+                  </div>
+                )}
+
+                {members.map(m => {
+                  const isMe = m.user_id === user?.id;
+                  const canEdit = isPrivileged(profile?.role) && !isMe;
+                  return (
+                    <div key={m.user_id} className="glass-card rounded-xl p-3 flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                        <span className="text-sm font-semibold text-primary">
+                          {(m.display_name || 'T').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">
+                          {m.display_name || 'Unnamed Teacher'} {isMe && <span className="text-[10px] text-muted-foreground">(you)</span>}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {isPrivileged(m.role) ? (
+                            <Crown className="h-3 w-3 text-primary" />
+                          ) : null}
+                          <span className="text-[11px] text-muted-foreground">
+                            {ROLE_LABEL[m.role] || m.role}
+                          </span>
+                        </div>
+                      </div>
+                      {canEdit ? (
+                        <Select
+                          value={m.role}
+                          onValueChange={(v) => handleChangeMemberRole(m.user_id, v as RoleOption)}
+                          disabled={updatingRole === m.user_id}
+                        >
+                          <SelectTrigger className="w-[140px] h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLE_OPTIONS.map(r => (
+                              <SelectItem key={r} value={r} className="text-xs">
+                                {ROLE_LABEL[r]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">
+                          {ROLE_LABEL[m.role] || m.role}
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
               </TabsContent>
             </Tabs>
           </>
