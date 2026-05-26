@@ -462,12 +462,7 @@ export default function LessonPlanForm() {
                 <Textarea
                   placeholder={"e.g.\nDefine whole numbers\nAdd 2-digit numbers without carrying"}
                   value={(plan.objectives || []).join('\n')}
-                  onChange={e =>
-                    updatePlan(
-                      'objectives',
-                      e.target.value.split('\n').map(s => s).filter((v, i, a) => i < a.length)
-                    )
-                  }
+                  onChange={e => updatePlan('objectives', e.target.value.split('\n'))}
                   rows={3}
                   className="touch-target"
                 />
