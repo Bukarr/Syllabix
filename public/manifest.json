@@ -36,7 +36,7 @@
   "categories": ["education", "productivity"],
   "lang": "en-NG",
   "dir": "ltr",
-  "scope": "/",
+  "scope": "/onboarding, /lessons, /notes, /profile, /settings, /help, /feedback, /about, /contact, /terms, /privacy, /dashboard, /analytics, /reports, /notifications, /messages, /support, /faq, /blog, /news, /events, /community, /resources, /tools, /integrations, /api, /developers, /partners, /affiliates, /careers, /press, /media, /investors, /legal, /compliance, /accessibility, /sitemap, /search, /terms-of-service, /privacy-policy, /cookie-policy, /refund-policy, /shipping-policy, /return-policy, /warranty-policy, /disclaimer, /license, /contributing, /code-of-conduct, /security, /vulnerability-disclosure, /report-issue, /contact-support, /feedback-form, /newsletter, /blog-posts, /case-studies, /whitepapers, /webinars, /events-calendar, /community-forum, /user-groups, /meetups, /hackathons",
   "prefer_related_applications": false,
   "screenshots": [
     {
