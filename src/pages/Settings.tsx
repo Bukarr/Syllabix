@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield } from 'lucide-react';
+import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import {
   restoreFromFile, getLastBackupDate,
 } from '@/lib/backup';
 import { supabase } from '@/integrations/supabase/client';
+import { getStoredTheme, applyTheme, type Theme } from '@/lib/theme';
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
@@ -31,6 +32,7 @@ export default function SettingsPage() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [lastBackup, setLastBackup] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [theme, setTheme] = useState<Theme>(getStoredTheme());
 
   useEffect(() => {
     getProfile().then(p => p && setProfile(p));
