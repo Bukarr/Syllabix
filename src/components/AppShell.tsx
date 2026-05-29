@@ -174,7 +174,7 @@ export function BottomNav() {
 
                 {/* Version info */}
                 <div className="pt-4 px-3 border-t border-border/30">
-                  <p className="text-[10px] text-muted-foreground/60">Syllabix v2.0</p>
+                  <p className="text-[10px] text-muted-foreground/60">Syllabix v1</p>
                 </div>
               </div>
             </motion.div>
