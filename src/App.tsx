@@ -18,6 +18,9 @@ import Portfolio from "./pages/Portfolio";
 import MyResources from "./pages/MyResources";
 import Auth from "./pages/Auth";
 import Collaborate from "./pages/Collaborate";
+import ResetPassword from "./pages/ResetPassword";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
@@ -89,6 +92,7 @@ const App = () => (
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="*"
             element={
@@ -108,6 +112,8 @@ const App = () => (
                     <Route path="/portfolio" element={<Portfolio />} />
                     <Route path="/my-resources" element={<MyResources />} />
                     <Route path="/collaborate" element={<Collaborate />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
