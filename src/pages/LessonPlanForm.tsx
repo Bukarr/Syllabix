@@ -369,6 +369,24 @@ export default function LessonPlanForm() {
                   ))}
                 </div>
               </div>
+              <div>
+                <Label className="text-sm font-medium">Class Level</Label>
+                <div className="grid grid-cols-3 gap-2 mt-1.5">
+                  {ALL_CLASSES.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => updatePlan('classLevel', c)}
+                      className={`py-2.5 px-2 rounded-lg border text-xs font-medium transition-all ${
+                        plan.classLevel === c
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-card text-muted-foreground'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-sm font-medium">Term</Label>
