@@ -22,9 +22,13 @@ import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
 import { getProfile } from "./lib/db";
+import { initTheme } from "./lib/theme";
 
 // Init notification scheduling on app start
 initNotifications();
+
+// Apply saved theme (light/dark) on app start
+initTheme();
 
 const queryClient = new QueryClient();
 const FLOW_READY_KEY = "syllabix:flow-ready";
