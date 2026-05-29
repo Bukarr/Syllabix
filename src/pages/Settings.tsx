@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield } from 'lucide-react';
+import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import {
   restoreFromFile, getLastBackupDate,
 } from '@/lib/backup';
 import { supabase } from '@/integrations/supabase/client';
+import { getStoredTheme, applyTheme, type Theme } from '@/lib/theme';
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
@@ -31,6 +32,7 @@ export default function SettingsPage() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [lastBackup, setLastBackup] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [theme, setTheme] = useState<Theme>(getStoredTheme());
 
   useEffect(() => {
     getProfile().then(p => p && setProfile(p));
@@ -190,6 +192,36 @@ export default function SettingsPage() {
               toast.success('Subjects updated');
             }}
           />
+        </div>
+
+        {/* Appearance */}
+        <div className="glass-card rounded-2xl p-5 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            {theme === 'light' ? <Sun className="h-5 w-5 text-primary" /> : <Moon className="h-5 w-5 text-primary" />}
+            <h3 className="font-heading font-semibold">Appearance</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { value: 'light', label: 'Light', icon: Sun },
+              { value: 'dark', label: 'Dark', icon: Moon },
+            ] as const).map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setTheme(opt.value);
+                  applyTheme(opt.value);
+                  toast.success(`${opt.label} theme enabled`);
+                }}
+                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg border text-sm font-medium transition-all touch-target ${
+                  theme === opt.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card text-muted-foreground'
+                }`}
+              >
+                <opt.icon className="h-4 w-4" /> {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Language */}
