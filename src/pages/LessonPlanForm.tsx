@@ -17,8 +17,11 @@ import { ResourceRecommendations } from '@/components/ResourceRecommendations';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { trackActivity } from '@/lib/ai-personalization';
 import { supabase } from '@/integrations/supabase/client';
+import { CLASSES } from '@/lib/curriculum';
 
 const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
+
+const ALL_CLASSES = Object.values(CLASSES).flat();
 
 const GENERATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-lesson`;
 const DRAFT_KEY = 'syllabix:current-lesson-draft-id';
