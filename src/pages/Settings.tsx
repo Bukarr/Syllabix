@@ -426,6 +426,13 @@ export default function SettingsPage() {
             <Trash2 className="h-4 w-4 mr-2" /> Delete All Data
           </Button>
         </div>
+
+        {/* Legal */}
+        <div className="flex items-center justify-center gap-4 pt-2 pb-1 text-xs text-muted-foreground">
+          <a href="/terms" className="hover:text-primary hover:underline">Terms of Service</a>
+          <span aria-hidden>·</span>
+          <a href="/privacy" className="hover:text-primary hover:underline">Privacy Policy</a>
+        </div>
       </motion.div>
     </div>
   );

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -43,6 +43,26 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === 'forgot') {
+      if (!email) {
+        toast.error('Please enter your email');
+        return;
+      }
+      setLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success('Password reset link sent! Check your email.');
+        setMode('login');
+      } catch (err: any) {
+        toast.error(err.message || 'Could not send reset link');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
@@ -90,9 +110,13 @@ export default function Auth() {
       >
         <div className="text-center space-y-2">
           <AppLogo size="xl" className="mx-auto" />
-          <h1 className="text-2xl font-heading font-bold">Syllabix<sup className="text-[0.6em] align-baseline relative -bottom-1">NG</sup></h1>
+          <h1 className="text-2xl font-heading font-bold">Syllabix</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === 'login' ? 'Sign in to collaborate' : 'Create your account'}
+            {mode === 'login'
+              ? 'Sign in to collaborate'
+              : mode === 'signup'
+                ? 'Create your account'
+                : 'Reset your password'}
           </p>
         </div>
 
@@ -124,6 +148,7 @@ export default function Auth() {
               />
             </div>
           </div>
+          {mode !== 'forgot' && (
           <div>
             <Label className="text-xs font-medium">Password</Label>
             <div className="relative mt-1">
@@ -137,18 +162,39 @@ export default function Auth() {
               />
             </div>
           </div>
+          )}
+          {mode === 'login' && (
+            <button
+              type="button"
+              onClick={() => setMode('forgot')}
+              className="text-xs text-primary hover:underline"
+            >
+              Forgot password?
+            </button>
+          )}
           <Button type="submit" disabled={loading} className="w-full h-11 font-semibold">
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                {mode === 'login' ? 'Sign In' : 'Create Account'}
+                {mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>
         </form>
 
+        {mode === 'forgot' ? (
+          <p className="text-center text-sm text-muted-foreground">
+            Remembered it?{' '}
+            <button
+              onClick={() => setMode('login')}
+              className="text-primary font-semibold hover:underline"
+            >
+              Back to Sign In
+            </button>
+          </p>
+        ) : (
         <p className="text-center text-sm text-muted-foreground">
           {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
           <button
@@ -158,9 +204,13 @@ export default function Auth() {
             {mode === 'login' ? 'Sign Up' : 'Sign In'}
           </button>
         </p>
+        )}
 
         <p className="text-center text-xs text-muted-foreground/60">
-          Sign in is optional — only needed for school collaboration features.
+          Sign in is optional — only needed for school collaboration features. By
+          continuing you agree to our{' '}
+          <a href="/terms" className="underline hover:text-primary">Terms</a> and{' '}
+          <a href="/privacy" className="underline hover:text-primary">Privacy Policy</a>.
         </p>
       </motion.div>
     </div>
