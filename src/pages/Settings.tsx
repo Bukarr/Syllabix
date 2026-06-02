@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon } from 'lucide-react';
+import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon, Mail, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -425,6 +425,40 @@ export default function SettingsPage() {
           >
             <Trash2 className="h-4 w-4 mr-2" /> Delete All Data
           </Button>
+        </div>
+
+        {/* Contact Us */}
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-3 mb-2">
+            <Mail className="h-5 w-5 text-primary" />
+            <h3 className="font-heading font-semibold">Contact Us</h3>
+          </div>
+          <a
+            href="mailto:syllabixng@gmail.com"
+            className="flex items-center gap-3 w-full p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all touch-target"
+          >
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Mail className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Email</p>
+              <p className="text-xs text-muted-foreground truncate">syllabixng@gmail.com</p>
+            </div>
+          </a>
+          <a
+            href="https://wa.me/2348027957871"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 w-full p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all touch-target"
+          >
+            <div className="p-2 rounded-lg bg-emerald-500/10">
+              <MessageCircle className="h-4 w-4 text-emerald-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">WhatsApp</p>
+              <p className="text-xs text-muted-foreground truncate">+234 802 795 7871</p>
+            </div>
+          </a>
         </div>
 
         {/* Legal */}
