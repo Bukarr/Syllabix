@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon, Mail, MessageCircle } from 'lucide-react';
+import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon, Mail, MessageCircle, Send, LifeBuoy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getStoredTheme, applyTheme, type Theme } from '@/lib/theme';
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>(getNotificationSettings());
@@ -433,6 +435,30 @@ export default function SettingsPage() {
             <Mail className="h-5 w-5 text-primary" />
             <h3 className="font-heading font-semibold">Contact Us</h3>
           </div>
+          <button
+            onClick={() => navigate('/contact')}
+            className="flex items-center gap-3 w-full p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all touch-target"
+          >
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Send className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-medium">Send us a message</p>
+              <p className="text-xs text-muted-foreground truncate">Works offline — syncs when online</p>
+            </div>
+          </button>
+          <button
+            onClick={() => navigate('/help')}
+            className="flex items-center gap-3 w-full p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all touch-target"
+          >
+            <div className="p-2 rounded-lg bg-primary/10">
+              <LifeBuoy className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-medium">Help Center</p>
+              <p className="text-xs text-muted-foreground truncate">FAQs & common issues</p>
+            </div>
+          </button>
           <a
             href="mailto:syllabixng@gmail.com"
             className="flex items-center gap-3 w-full p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all touch-target"
@@ -446,7 +472,7 @@ export default function SettingsPage() {
             </div>
           </a>
           <a
-            href="https://wa.me/2348027957871"
+            href={`https://wa.me/2348027957871?text=${encodeURIComponent("Hello Syllabix Support, I need help with the app.")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 w-full p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all touch-target"
@@ -455,7 +481,7 @@ export default function SettingsPage() {
               <MessageCircle className="h-4 w-4 text-emerald-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">WhatsApp</p>
+              <p className="text-sm font-medium">Chat on WhatsApp</p>
               <p className="text-xs text-muted-foreground truncate">+234 802 795 7871</p>
             </div>
           </a>

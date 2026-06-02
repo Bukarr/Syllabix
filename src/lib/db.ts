@@ -80,6 +80,15 @@ interface AINote {
   updatedAt: string;
 }
 
+interface SupportMessage {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  synced: boolean;
+  createdAt: string;
+}
+
 interface NaijaLessonDB extends DBSchema {
   profile: {
     key: string;
@@ -113,10 +122,17 @@ interface NaijaLessonDB extends DBSchema {
       'by-status': string;
     };
   };
+  supportMessages: {
+    key: string;
+    value: SupportMessage;
+    indexes: {
+      'by-synced': string;
+    };
+  };
 }
 
 const DB_NAME = 'naijalesson-db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const PROFILE_BACKUP_KEY = 'syllabix:profile-backup';
 
 function normalizeProfile(profile: Partial<TeacherProfile>): TeacherProfile {
@@ -190,6 +206,12 @@ export async function getDB() {
         aiStore.createIndex('by-classLevel', 'classLevel');
         aiStore.createIndex('by-term', 'term');
         aiStore.createIndex('by-status', 'status');
+      }
+
+      // Support messages store (offline-first contact form)
+      if (!db.objectStoreNames.contains('supportMessages')) {
+        const smStore = db.createObjectStore('supportMessages', { keyPath: 'id' });
+        smStore.createIndex('by-synced', 'synced');
       }
     },
   });
@@ -278,4 +300,24 @@ export async function deleteAINote(id: string): Promise<void> {
   await db.delete('aiNotes', id);
 }
 
-export type { TeacherProfile, LessonPlan, SchemeOfWork, AINote, ChatMessage, NoteVersion };
+// Support message operations
+export async function saveSupportMessage(msg: SupportMessage): Promise<void> {
+  const db = await getDB();
+  await db.put('supportMessages', msg);
+}
+
+export async function getPendingSupportMessages(): Promise<SupportMessage[]> {
+  const db = await getDB();
+  const all = await db.getAll('supportMessages');
+  return all.filter(m => !m.synced);
+}
+
+export async function markSupportMessageSynced(id: string): Promise<void> {
+  const db = await getDB();
+  const msg = await db.get('supportMessages', id);
+  if (msg) {
+    await db.put('supportMessages', { ...msg, synced: true });
+  }
+}
+
+export type { TeacherProfile, LessonPlan, SchemeOfWork, AINote, ChatMessage, NoteVersion, SupportMessage };

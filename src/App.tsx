@@ -21,17 +21,23 @@ import Collaborate from "./pages/Collaborate";
 import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Contact from "./pages/Contact";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
 import { getProfile } from "./lib/db";
 import { initTheme } from "./lib/theme";
+import { initSupportSync } from "./lib/support";
 
 // Init notification scheduling on app start
 initNotifications();
 
 // Apply saved theme (light/dark) on app start
 initTheme();
+
+// Sync any queued offline support messages when online
+initSupportSync();
 
 const queryClient = new QueryClient();
 const FLOW_READY_KEY = "syllabix:flow-ready";
@@ -114,6 +120,8 @@ const App = () => (
                     <Route path="/collaborate" element={<Collaborate />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/help" element={<HelpCenter />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
