@@ -55,7 +55,8 @@ export default function LessonReviewer() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!session?.access_token) { toast.error('Please sign in to use AI features'); return; }
+      const token = session.access_token;
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
@@ -92,7 +93,8 @@ export default function LessonReviewer() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!session?.access_token) { toast.error('Please sign in to use AI features'); return; }
+      const token = session.access_token;
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
