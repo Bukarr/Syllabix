@@ -27,7 +27,8 @@ async function streamChat({
   onDelta: (text: string) => void; onDone: () => void; onError: (err: string) => void;
 }) {
   const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!session?.access_token) { onError('Please sign in to use AI features'); return; }
+  const token = session.access_token;
   const resp = await fetch(CHAT_URL, {
     method: 'POST',
     headers: {
