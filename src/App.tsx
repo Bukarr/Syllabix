@@ -1,29 +1,30 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { TopBar, BottomNav } from "@/components/AppShell";
+import { Loader2 } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
-import Onboarding from "./pages/Onboarding";
-import LessonPlanForm from "./pages/LessonPlanForm";
-import MyPlans from "./pages/MyPlans";
-import SchemeOfWork from "./pages/SchemeOfWork";
-import CopyNoteGenerator from "./pages/CopyNoteGenerator";
-import Templates from "./pages/Templates";
-import SettingsPage from "./pages/Settings";
-import LessonReviewer from "./pages/LessonReviewer";
-import ClassTracker from "./pages/ClassTracker";
-import Portfolio from "./pages/Portfolio";
-import MyResources from "./pages/MyResources";
-import Auth from "./pages/Auth";
-import Collaborate from "./pages/Collaborate";
-import ResetPassword from "./pages/ResetPassword";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Contact from "./pages/Contact";
-import HelpCenter from "./pages/HelpCenter";
-import NotFound from "./pages/NotFound";
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const LessonPlanForm = lazy(() => import("./pages/LessonPlanForm"));
+const MyPlans = lazy(() => import("./pages/MyPlans"));
+const SchemeOfWork = lazy(() => import("./pages/SchemeOfWork"));
+const CopyNoteGenerator = lazy(() => import("./pages/CopyNoteGenerator"));
+const Templates = lazy(() => import("./pages/Templates"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
+const LessonReviewer = lazy(() => import("./pages/LessonReviewer"));
+const ClassTracker = lazy(() => import("./pages/ClassTracker"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const MyResources = lazy(() => import("./pages/MyResources"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Collaborate = lazy(() => import("./pages/Collaborate"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Contact = lazy(() => import("./pages/Contact"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import InstallPrompt from "./components/InstallPrompt";
 import { initNotifications } from "./lib/notifications";
 import { getProfile } from "./lib/db";
@@ -40,6 +41,12 @@ initTheme();
 initSupportSync();
 
 const queryClient = new QueryClient();
+
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
 const FLOW_READY_KEY = "syllabix:flow-ready";
 const LAST_ROUTE_KEY = "syllabix:last-route";
 
@@ -95,6 +102,7 @@ const App = () => (
       <InstallPrompt />
       <BrowserRouter>
         <FlowPersistence />
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
@@ -130,6 +138,7 @@ const App = () => (
             }
           />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
