@@ -1,11 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Seo from '@/components/Seo';
 
 export default function Terms() {
   const navigate = useNavigate();
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-32 space-y-6">
+      <Seo
+        title="Terms of Service — Syllabix"
+        description="Read the Terms of Service for Syllabix, the offline-first lesson planning app for Nigerian teachers."
+        path="/terms"
+      />
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2">
         <ArrowLeft className="h-4 w-4 mr-1" /> Back
       </Button>

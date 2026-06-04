@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, LifeBuoy, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Seo from '@/components/Seo';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
@@ -75,8 +77,27 @@ const whatsappLink = `https://wa.me/2348027957871?text=${encodeURIComponent(WHAT
 
 export default function HelpCenter() {
   const navigate = useNavigate();
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: SECTIONS.flatMap(section =>
+      section.items.map(item => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    ),
+  };
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-32">
+      <Seo
+        title="Help Center — Syllabix FAQs"
+        description="Answers to common Syllabix questions: offline install, login, lesson generation, syncing and more."
+        path="/help"
+      />
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2 mb-4">
         <ArrowLeft className="h-4 w-4 mr-1" /> Back
       </Button>
