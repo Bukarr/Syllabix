@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { queueSupportMessage, supportMessageSchema } from '@/lib/support';
 import { getProfile } from '@/lib/db';
 import { type ValidationErrors } from '@/lib/validation';
+import Seo from '@/components/Seo';
 
 const SUPPORT_EMAIL = 'syllabixng@gmail.com';
 const WHATSAPP_NUMBER = '2348027957871'; // international format, no +, no spaces
@@ -65,6 +66,11 @@ export default function Contact() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-32">
+      <Seo
+        title="Contact Us — Syllabix Support"
+        description="Get help with Syllabix. Send us a message or chat on WhatsApp — we respond fast, even when you're offline."
+        path="/contact"
+      />
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2 mb-4">
         <ArrowLeft className="h-4 w-4 mr-1" /> Back
       </Button>
