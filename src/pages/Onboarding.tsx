@@ -11,6 +11,7 @@ import { SCHOOL_LEVELS, CLASSES, SUBJECTS, GEOPOLITICAL_ZONES, STATES, CLASSROOM
 import heroImage from '@/assets/hero-classroom.jpg';
 import { profileSchema, type ValidationErrors } from '@/lib/validation';
 import WhatIsSyllabix from '@/components/WhatIsSyllabix';
+import Seo from '@/components/Seo';
 
 const TOTAL_STEPS = 4;
 
@@ -114,6 +115,11 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Seo
+        title="Syllabix — Lesson Notes & Plans for Nigerian Teachers"
+        description="Auto-generate curriculum-aligned lesson plans, copy notes, schemes of work and assessments. Offline-first, built for Nigerian teachers."
+        path="/onboarding"
+      />
       {/* Progress bar */}
       {step > 0 && (
         <div className="h-1 bg-muted">
