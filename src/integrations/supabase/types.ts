@@ -56,6 +56,27 @@ export type Database = {
         }
         Relationships: []
       }
+      api_rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -225,6 +246,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_increment_rate_limit: {
+        Args: {
+          _endpoint: string
+          _identifier: string
+          _max: number
+          _window_seconds: number
+        }
+        Returns: boolean
+      }
       get_my_current_school_code: { Args: never; Returns: string }
       get_my_profile_role: { Args: never; Returns: string }
       get_my_school_code: { Args: never; Returns: string }
