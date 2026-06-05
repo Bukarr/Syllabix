@@ -677,9 +677,32 @@ export default function LessonPlanForm() {
             </Button>
           )}
           {step < STEPS.length - 1 ? (
-            <Button className="flex-1 touch-target font-semibold" onClick={() => setStep(s => s + 1)}>
-              Continue <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
+            <>
+              {step === 0 && (
+                <Button
+                  variant="secondary"
+                  className="flex-1 touch-target font-semibold"
+                  onClick={handleAIGenerate}
+                  disabled={
+                    isGenerating ||
+                    !isOnline ||
+                    !plan.subject ||
+                    !plan.classLevel ||
+                    !plan.topic?.trim() ||
+                    !(plan.objectives || []).some(o => o.trim())
+                  }
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating...</>
+                  ) : (
+                    <><Sparkles className="h-4 w-4 mr-2" />Generate with AI</>
+                  )}
+                </Button>
+              )}
+              <Button className="flex-1 touch-target font-semibold" onClick={() => setStep(s => s + 1)}>
+                Continue <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </>
           ) : (
             <div className="flex-1 flex gap-2">
               <Button variant="outline" className="flex-1 touch-target" onClick={() => handleSave('draft')}>
