@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { getProfile, saveProfile, type TeacherProfile } from '@/lib/db';
 import { SCHOOL_LEVELS, CLASSES, SUBJECTS, GEOPOLITICAL_ZONES, STATES, CLASSROOM_RESOURCES } from '@/lib/curriculum';
 import heroImage from '@/assets/hero-classroom.jpg';
+import heroAvif from '@/assets/hero-classroom.jpg?format=avif&w=800&quality=70';
+import heroWebp from '@/assets/hero-classroom.jpg?format=webp&w=800&quality=72';
 import { profileSchema, type ValidationErrors } from '@/lib/validation';
 import WhatIsSyllabix from '@/components/WhatIsSyllabix';
 import Seo from '@/components/Seo';
