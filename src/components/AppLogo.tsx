@@ -20,6 +20,9 @@ export function AppLogo({ size = 'sm', className }: AppLogoProps) {
     <img
       src={logoIcon}
       alt="Syllabix"
+      width={40}
+      height={40}
+      decoding="async"
       className={cn(s.container, 'object-contain shrink-0', className)}
     />
   );
