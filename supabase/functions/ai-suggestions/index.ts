@@ -1,4 +1,4 @@
-import { corsHeaders } from '@supabase/supabase-js/cors'
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 Deno.serve(async (req) => {
@@ -25,6 +25,20 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    const svc = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data: allowed } = await svc.rpc('check_and_increment_rate_limit', {
+      _identifier: user.id,
+      _endpoint: 'ai-suggestions',
+      _max: 20,
+      _window_seconds: 60,
+    });
+    if (allowed === false) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please wait a moment and try again.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } }
+      );
     }
 
     // Fetch user activity (last 30 days)

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -56,6 +56,12 @@ const bottomItems = [
 export function BottomNav() {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Always close the drawer whenever the route changes (covers taps on the
+  // current route, programmatic navigation, and back/forward gestures).
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
 
   if (location.pathname === '/onboarding') return null;
 

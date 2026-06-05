@@ -496,42 +496,22 @@ export default function LessonPlanForm() {
                 if (!plan.classLevel) missing.push('class level');
                 if (!plan.topic?.trim()) missing.push('topic');
                 if (!(plan.objectives || []).some(o => o.trim())) missing.push('at least one objective');
-                const blocked = missing.length > 0;
+                if (missing.length === 0) return null;
                 return (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                    {blocked && (
-                      <div className="flex items-start gap-2 p-2 mb-2 rounded-lg bg-muted/50 border border-border">
-                        <FileQuestion className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                        <p className="text-[11px] text-muted-foreground">
-                          Add {missing.join(', ')} to generate with AI
-                        </p>
-                      </div>
-                    )}
-                    {!blocked && !isOnline && (
-                      <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-muted/50 border border-border">
-                        <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
-                        <p className="text-[11px] text-muted-foreground">AI generation requires internet connection</p>
-                      </div>
-                    )}
-                    <Button
-                      onClick={handleAIGenerate}
-                      disabled={isGenerating || !isOnline || blocked}
-                      className="w-full touch-target font-semibold"
-                      variant="default"
-                      size="lg"
-                    >
-                      {isGenerating ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating plan for {plan.classLevel}...</>
-                      ) : (
-                        <><Sparkles className="h-4 w-4 mr-2" />Generate Lesson Plan with AI</>
-                      )}
-                    </Button>
-                    {!blocked && (
-                      <p className="text-[10px] text-muted-foreground text-center mt-1">You'll review the plan before it's applied.</p>
-                    )}
-                  </motion.div>
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-muted/50 border border-border">
+                    <FileQuestion className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                    <p className="text-[11px] text-muted-foreground">
+                      Add {missing.join(', ')} to generate with AI
+                    </p>
+                  </div>
                 );
               })()}
+              {!isOnline && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border">
+                  <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-[11px] text-muted-foreground">AI generation requires internet connection</p>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -697,9 +677,32 @@ export default function LessonPlanForm() {
             </Button>
           )}
           {step < STEPS.length - 1 ? (
-            <Button className="flex-1 touch-target font-semibold" onClick={() => setStep(s => s + 1)}>
-              Continue <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
+            <>
+              {step === 0 && (
+                <Button
+                  variant="secondary"
+                  className="flex-1 touch-target font-semibold"
+                  onClick={handleAIGenerate}
+                  disabled={
+                    isGenerating ||
+                    !isOnline ||
+                    !plan.subject ||
+                    !plan.classLevel ||
+                    !plan.topic?.trim() ||
+                    !(plan.objectives || []).some(o => o.trim())
+                  }
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating...</>
+                  ) : (
+                    <><Sparkles className="h-4 w-4 mr-2" />Generate with AI</>
+                  )}
+                </Button>
+              )}
+              <Button className="flex-1 touch-target font-semibold" onClick={() => setStep(s => s + 1)}>
+                Continue <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </>
           ) : (
             <div className="flex-1 flex gap-2">
               <Button variant="outline" className="flex-1 touch-target" onClick={() => handleSave('draft')}>

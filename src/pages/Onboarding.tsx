@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { getProfile, saveProfile, type TeacherProfile } from '@/lib/db';
 import { SCHOOL_LEVELS, CLASSES, SUBJECTS, GEOPOLITICAL_ZONES, STATES, CLASSROOM_RESOURCES } from '@/lib/curriculum';
 import heroImage from '@/assets/hero-classroom.jpg';
+import heroAvif from '@/assets/hero-classroom.jpg?w=800&quality=70&format=avif';
+import heroWebp from '@/assets/hero-classroom.jpg?w=800&quality=72&format=webp';
 import { profileSchema, type ValidationErrors } from '@/lib/validation';
 import WhatIsSyllabix from '@/components/WhatIsSyllabix';
 import Seo from '@/components/Seo';
@@ -143,7 +145,19 @@ export default function Onboarding() {
               className="flex-1 flex flex-col"
             >
               <div className="relative h-56 overflow-hidden">
-                <img src={heroImage} alt="Nigerian classroom" className="w-full h-full object-cover" />
+                <picture>
+                  <source srcSet={heroAvif} type="image/avif" />
+                  <source srcSet={heroWebp} type="image/webp" />
+                  <img
+                    src={heroImage}
+                    alt="Nigerian classroom"
+                    width={800}
+                    height={448}
+                    fetchPriority="high"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                  />
+                </picture>
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
               </div>
               <div className="flex-1 flex flex-col items-center justify-center px-6 -mt-12 relative z-10">

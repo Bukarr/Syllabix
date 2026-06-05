@@ -31,6 +31,24 @@ serve(async (req) => {
       });
     }
 
+    // Server-side rate limiting: 20 AI requests per minute per user.
+    const svc = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: allowed } = await svc.rpc("check_and_increment_rate_limit", {
+      _identifier: user.id,
+      _endpoint: "generate-lesson",
+      _max: 20,
+      _window_seconds: 60,
+    });
+    if (allowed === false) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please wait a moment and try again." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
