@@ -25,6 +25,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    const svc = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    const { data: allowed } = await svc.rpc('check_and_increment_rate_limit', {
+      _identifier: user.id,
+      _endpoint: 'generate-resources',
+      _max: 20,
+      _window_seconds: 60,
+    });
+    if (allowed === false) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please wait a moment and try again.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } }
+      );
+    }
+
     const sanitize = (s: unknown, max = 300): string =>
       typeof s === 'string' ? s.replace(/[\x00-\x1F\x7F]/g, '').slice(0, max) : '';
 
