@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, FileText, PenLine, Settings,
@@ -55,9 +55,14 @@ const bottomItems = [
 
 export function BottomNav() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const closeDrawer = () => setDrawerOpen(false);
   const isCurrentRoute = (to: string) => location.pathname === to;
+  const handleDrawerNavigation = (to: string) => {
+    setDrawerOpen(false);
+    navigate(to);
+  };
 
   // Always close the drawer whenever the route changes (covers taps on the
   // current route, programmatic navigation, and back/forward gestures).
@@ -159,12 +164,12 @@ export function BottomNav() {
                       {group.items.map(({ to, icon: Icon, label }) => {
                         const isActive = isCurrentRoute(to);
                         return (
-                          <NavLink
+                          <button
                             key={to}
-                            to={to}
-                            onClick={closeDrawer}
+                            type="button"
+                            onClick={() => handleDrawerNavigation(to)}
                             aria-current={isActive ? 'page' : undefined}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                            className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
                               isActive
                                 ? 'bg-primary/10 text-primary'
                                 : 'text-foreground/80 hover:bg-muted/50 hover:text-foreground'
@@ -175,7 +180,7 @@ export function BottomNav() {
                             </div>
                             <span className="text-sm font-medium flex-1">{label}</span>
                             <ChevronRight className={`h-3.5 w-3.5 ${isActive ? 'text-primary' : 'text-muted-foreground/50'}`} />
-                          </NavLink>
+                          </button>
                         );
                       })}
                     </div>
