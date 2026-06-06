@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, FileText, PenLine, Settings,
   ClipboardCheck, Menu, X, Plus, BarChart3, Briefcase,
