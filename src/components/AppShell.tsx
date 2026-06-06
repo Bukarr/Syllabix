@@ -114,13 +114,11 @@ export function BottomNav() {
       </nav>
 
       {/* Full-screen drawer */}
-      <AnimatePresence>
-        {drawerOpen && (
+      {drawerOpen && (
           <motion.div
             key="drawer-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[60] bg-background/75 backdrop-blur-sm"
             onClick={closeDrawer}
@@ -128,7 +126,6 @@ export function BottomNav() {
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               className="absolute right-0 top-0 bottom-0 z-[70] w-[82%] max-w-xs border-l border-border/50 bg-card/95 backdrop-blur-2xl"
               style={{ boxShadow: '-8px 0 32px hsl(0 0% 0% / 0.4)' }}
@@ -194,8 +191,7 @@ export function BottomNav() {
               </div>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
+      )}
     </>
   );
 }
