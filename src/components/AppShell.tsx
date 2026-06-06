@@ -108,17 +108,18 @@ export function BottomNav() {
 
       {/* Full-screen drawer */}
       <AnimatePresence>
-        {drawerOpen && (
-          <>
+        {drawerOpen && [
             <motion.div
+              key="drawer-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="fixed inset-0 z-[60] bg-background/60 backdrop-blur-sm"
               onClick={() => setDrawerOpen(false)}
-            />
+            />,
             <motion.div
+              key="drawer-panel"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -183,9 +184,8 @@ export function BottomNav() {
                   <p className="text-[10px] text-muted-foreground/60">Syllabix v1</p>
                 </div>
               </div>
-            </motion.div>
-          </>
-        )}
+            </motion.div>,
+        ]}
       </AnimatePresence>
     </>
   );
