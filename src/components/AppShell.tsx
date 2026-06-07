@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { OnlineIndicator } from './OnlineIndicator';
 import { AppLogo } from './AppLogo';
+import { preloadRoute, preloadAllRoutes } from '@/lib/route-preload';
 
 const navGroups = [
   {
@@ -64,6 +65,12 @@ export function BottomNav() {
     navigate(to);
   };
 
+  // Warm all route chunks during idle time so navigation never blocks on a
+  // network fetch (smooth content swap with no reload flash on slow networks).
+  useEffect(() => {
+    preloadAllRoutes();
+  }, []);
+
   // Always close the drawer whenever the route changes (covers taps on the
   // current route, programmatic navigation, and back/forward gestures).
   useEffect(() => {
@@ -84,6 +91,8 @@ export function BottomNav() {
                 <NavLink
                   key={to}
                   to={to}
+                  onPointerEnter={() => preloadRoute(to)}
+                  onPointerDown={() => preloadRoute(to)}
                   className={`relative flex flex-col items-center gap-0.5 px-5 py-2 rounded-xl transition-all touch-target ${
                     isActive
                       ? 'text-primary'
@@ -165,6 +174,7 @@ export function BottomNav() {
                             key={to}
                             type="button"
                             onClick={() => handleDrawerNavigation(to)}
+                            onPointerEnter={() => preloadRoute(to)}
                             aria-current={isActive ? 'page' : undefined}
                             className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
                               isActive
