@@ -669,7 +669,7 @@ export default function LessonPlanForm() {
       />
 
       {/* Bottom navigation */}
-      <div className="sticky bottom-[6.5rem] z-40 mx-4 mb-4 rounded-2xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur-md safe-bottom">
+      <div className="mt-8 mb-4 rounded-2xl border border-border bg-card p-3 shadow-lg safe-bottom">
         <div className="flex gap-3 overflow-x-auto">
           {step > 0 && (
             <Button variant="outline" className="touch-target" onClick={() => setStep(s => s - 1)}>
