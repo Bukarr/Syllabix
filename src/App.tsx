@@ -47,6 +47,11 @@ const PageFallback = () => (
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
   </div>
 );
+const ContentFallback = () => (
+  <div className="flex items-center justify-center py-24">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
 const FLOW_READY_KEY = "syllabix:flow-ready";
 const LAST_ROUTE_KEY = "syllabix:last-route";
 
@@ -113,6 +118,7 @@ const App = () => (
               <div className="min-h-screen bg-background">
                 <TopBar />
                 <main>
+                  <Suspense fallback={<ContentFallback />}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/lesson-plan" element={<LessonPlanForm />} />
@@ -132,6 +138,7 @@ const App = () => (
                     <Route path="/help" element={<HelpCenter />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </Suspense>
                 </main>
                 <BottomNav />
               </div>
