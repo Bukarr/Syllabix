@@ -5,7 +5,7 @@ teachers. It auto-generates curriculum-aligned lesson plans, pupil copy notes,
 schemes of work and assessments — and keeps working even with poor or no
 internet connectivity.
 
-🌍 **Live app:** https://syllabixng.lovable.app
+🌍 **Live app:** https://syllabixng.vercel.app
 
 ---
 
