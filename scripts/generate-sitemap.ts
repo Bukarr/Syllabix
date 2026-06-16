@@ -2,7 +2,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://syllabixng.lovable.app";
+const BASE_URL = "https://syllabixng.vercel.app";
 
 interface SitemapEntry {
   path: string;
