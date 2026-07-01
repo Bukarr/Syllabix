@@ -5,14 +5,12 @@ import { createClient } from "@supabase/supabase-js";
  * Security regression tests for the internal `api_rate_limits` table and its
  * related server-side rate-limiting function.
  *
- * Guarantees enforced here:
- *  1. The table is protected by a deny-all RLS policy — anonymous clients can
- *     neither read nor write it directly through the Data API.
- *  2. The only supported path, `check_and_increment_rate_limit`, still works and
- *     actually throttles once the configured limit is exceeded.
- *
- * These run against the live Data API using the public anon key (the same key
- * shipped to browsers), so they reflect exactly what an attacker could attempt.
+ * Guarantees enforced here (exercised with the public anon key — exactly what a
+ * browser/attacker has):
+ *  1. The table is protected by a deny-all RLS policy: anonymous clients cannot
+ *     read, insert, or delete its rows directly through the Data API.
+ *  2. `check_and_increment_rate_limit` is NOT publicly executable — it is only
+ *     reachable server-side (service role) from the AI edge functions.
  */
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -27,8 +25,7 @@ describe("api_rate_limits deny-all policy", () => {
       .select("id, identifier, endpoint")
       .limit(50);
 
-    // Either an explicit RLS/permission error, or an empty result set.
-    // What must NEVER happen: rows are returned.
+    // Must never return rows: either an RLS/permission error or an empty set.
     if (error) {
       expect(error).toBeTruthy();
     } else {
@@ -41,42 +38,39 @@ describe("api_rate_limits deny-all policy", () => {
       .from("api_rate_limits")
       .insert({ identifier: "test-attacker", endpoint: "test-endpoint" });
 
-    // The deny-all WITH CHECK (false) must reject this write.
+    // deny-all WITH CHECK (false) must reject this write.
     expect(error).toBeTruthy();
   });
 
-  it("blocks anonymous direct DELETE of the whole table", async () => {
-    const { error } = await anon
+  it("does not allow anonymous DELETE to affect any rows", async () => {
+    // With deny-all RLS, PostgREST reports success but zero rows are visible/
+    // deletable. `.select()` returns exactly the rows that were deleted.
+    const { data, error } = await anon
       .from("api_rate_limits")
       .delete()
-      .neq("identifier", "___never___");
+      .neq("identifier", "___never___")
+      .select("id");
 
-    expect(error).toBeTruthy();
+    if (error) {
+      expect(error).toBeTruthy();
+    } else {
+      // No rows were deletable => policy is intact.
+      expect(data).toEqual([]);
+    }
   });
 });
 
-describe("check_and_increment_rate_limit throttling", () => {
-  it("allows calls up to the limit, then blocks further calls", async () => {
-    // Unique identifier per run so the test is independent of prior state.
-    const identifier = `test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const endpoint = "vitest-throttle";
-    const max = 3;
-    const windowSeconds = 60;
+describe("check_and_increment_rate_limit is server-side only", () => {
+  it("rejects anonymous execution of the rate-limit function", async () => {
+    const { error } = await anon.rpc("check_and_increment_rate_limit", {
+      _identifier: `test-${Date.now()}`,
+      _endpoint: "vitest-probe",
+      _max: 3,
+      _window_seconds: 60,
+    });
 
-    const results: boolean[] = [];
-    for (let i = 0; i < max + 2; i++) {
-      const { data, error } = await anon.rpc("check_and_increment_rate_limit", {
-        _identifier: identifier,
-        _endpoint: endpoint,
-        _max: max,
-        _window_seconds: windowSeconds,
-      });
-      expect(error).toBeNull();
-      results.push(data as boolean);
-    }
-
-    // First `max` calls allowed, everything after is throttled.
-    expect(results.slice(0, max)).toEqual([true, true, true]);
-    expect(results.slice(max)).toEqual([false, false]);
+    // The function must not be callable by untrusted (anon) clients.
+    expect(error).toBeTruthy();
+    expect(error?.code).toBe("42501"); // insufficient_privilege / permission denied
   });
 });
