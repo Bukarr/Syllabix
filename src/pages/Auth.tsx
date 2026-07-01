@@ -209,8 +209,8 @@ export default function Auth() {
         <p className="text-center text-xs text-muted-foreground/60">
           Sign in is optional — only needed for school collaboration features. By
           continuing you agree to our{' '}
-          <a href="/terms" className="underline hover:text-primary">Terms</a> and{' '}
-          <a href="/privacy" className="underline hover:text-primary">Privacy Policy</a>.
+          <Link to="/terms" className="underline hover:text-primary">Terms</Link> and{' '}
+          <Link to="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
         </p>
       </motion.div>
     </div>
