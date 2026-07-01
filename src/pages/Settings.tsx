@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon, Mail, MessageCircle, Send, LifeBuoy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -489,9 +489,9 @@ export default function SettingsPage() {
 
         {/* Legal */}
         <div className="flex items-center justify-center gap-4 pt-2 pb-1 text-xs text-muted-foreground">
-          <a href="/terms" className="hover:text-primary hover:underline">Terms of Service</a>
+          <Link to="/terms" className="hover:text-primary hover:underline">Terms of Service</Link>
           <span aria-hidden>·</span>
-          <a href="/privacy" className="hover:text-primary hover:underline">Privacy Policy</a>
+          <Link to="/privacy" className="hover:text-primary hover:underline">Privacy Policy</Link>
         </div>
       </motion.div>
     </div>
