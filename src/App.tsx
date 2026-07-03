@@ -12,6 +12,7 @@ const MyPlans = lazy(() => import("./pages/MyPlans"));
 const SchemeOfWork = lazy(() => import("./pages/SchemeOfWork"));
 const CopyNoteGenerator = lazy(() => import("./pages/CopyNoteGenerator"));
 const Templates = lazy(() => import("./pages/Templates"));
+const LessonPlanTemplates = lazy(() => import("./pages/LessonPlanTemplates"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const LessonReviewer = lazy(() => import("./pages/LessonReviewer"));
 const ClassTracker = lazy(() => import("./pages/ClassTracker"));
@@ -126,6 +127,7 @@ const App = () => (
                     <Route path="/scheme" element={<SchemeOfWork />} />
                     <Route path="/ai-notes" element={<CopyNoteGenerator />} />
                     <Route path="/templates" element={<Templates />} />
+                    <Route path="/templates/lesson-plans" element={<LessonPlanTemplates />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/reviewer" element={<LessonReviewer />} />
                     <Route path="/class-tracker" element={<ClassTracker />} />
