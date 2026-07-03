@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Library, Search, BookOpen, Copy, ChevronRight } from 'lucide-react';
 import { AppLogo } from '@/components/AppLogo';
@@ -214,6 +214,13 @@ export default function Templates() {
     <div className="pb-24 px-4 pt-4">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <h2 className="text-xl font-heading font-bold">Template Library</h2>
+
+        <Link
+          to="/templates/lesson-plans"
+          className="block glass-card rounded-xl p-3 text-xs text-primary underline underline-offset-2"
+        >
+          Browse free lesson plan templates &amp; formats →
+        </Link>
 
         {/* Tabs */}
         <div className="flex gap-2">
