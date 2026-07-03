@@ -11,8 +11,11 @@ interface SitemapEntry {
 }
 
 // Public, indexable routes only. Auth-gated/internal routes are omitted.
+// Intentionally excluded (private/auth or noindex): /auth, /reset-password,
+// /my-plans, /settings, and other authenticated dashboard routes.
 const entries: SitemapEntry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/onboarding", changefreq: "monthly", priority: "0.9" },
   { path: "/lesson-plan", changefreq: "monthly", priority: "0.8" },
   { path: "/scheme", changefreq: "monthly", priority: "0.8" },
   { path: "/ai-notes", changefreq: "monthly", priority: "0.8" },
