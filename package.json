@@ -99,5 +99,14 @@
     "vite": "^5.4.19",
     "vite-imagetools": "^6.0.0",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "rollup": "4.62.2",
+    "@babel/plugin-transform-modules-systemjs": "7.29.4",
+    "fast-uri": "3.1.2",
+    "brace-expansion": "2.0.3",
+    "picomatch": "4.0.5",
+    "minimatch": "10.2.5",
+    "glob": "11.1.0"
   }
 }
