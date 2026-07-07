@@ -56,6 +56,7 @@ export default function MyResources() {
           <div className="space-y-3">
             {resources.map(r => {
               const Icon = typeIcons[r.type] || LinkIcon;
+              const safeUrl = r.url && /^https?:\/\//i.test(r.url) ? r.url : '#';
               return (
                 <motion.div
                   key={r.id}
@@ -76,7 +77,7 @@ export default function MyResources() {
                   </div>
                   <div className="flex gap-2">
                     <a
-                      href={r.url}
+                      href={safeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1"
