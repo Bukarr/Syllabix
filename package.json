@@ -107,6 +107,7 @@
     "brace-expansion": "2.0.3",
     "picomatch": "4.0.5",
     "minimatch": "10.2.5",
-    "glob": "11.1.0"
+    "glob": "11.1.0",
+    "dompurify": "3.4.11"
   }
 }
