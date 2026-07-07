@@ -255,11 +255,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      get_my_current_school_code: { Args: never; Returns: string }
-      get_my_profile_role: { Args: never; Returns: string }
-      get_my_school_code: { Args: never; Returns: string }
-      get_user_school_code: { Args: { _user_id: string }; Returns: string }
-      is_workspace_admin: { Args: never; Returns: boolean }
       set_member_role: {
         Args: { _new_role: string; _target_user_id: string }
         Returns: undefined
