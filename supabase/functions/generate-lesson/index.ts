@@ -81,6 +81,41 @@ serve(async (req) => {
     const termLabel = term === 1 ? "1st" : term === 2 ? "2nd" : "3rd";
     const curriculumPosition = `Week ${week || 1}, ${termLabel} Term content for ${classLevel} ${subject}`;
 
+    // ---- Curriculum grounding: look up verified NERDC data for this slot ----
+    let grounded = false;
+    let groundedSource: string | null = null;
+    let groundedObjectives: string[] = [];
+    let groundedTopic = topic;
+    let groundedSubTopic = subTopic;
+    try {
+      const { data: cur } = await svc
+        .from("curriculum_topics")
+        .select("topic, sub_topic, learning_objectives, source, verified")
+        .eq("subject", subject)
+        .eq("class_level", classLevel)
+        .eq("term", term)
+        .eq("week", week)
+        .eq("verified", true)
+        .maybeSingle();
+      if (cur) {
+        grounded = true;
+        groundedSource = cur.source ?? "NERDC";
+        groundedTopic = cur.topic || topic;
+        groundedSubTopic = cur.sub_topic || subTopic;
+        groundedObjectives = Array.isArray(cur.learning_objectives) ? cur.learning_objectives : [];
+      } else {
+        // No verified curriculum for this slot — log the gap so coverage can be expanded.
+        await svc.from("curriculum_gaps").insert({
+          subject, class_level: classLevel, term, week, user_id: user.id,
+        });
+      }
+    } catch (e) {
+      console.error("curriculum grounding lookup failed:", e);
+    }
+    const groundingNote = grounded
+      ? `\n\nGROUNDED CURRICULUM DATA (authoritative — align strictly to this): Topic "${groundedTopic}"${groundedSubTopic ? `, sub-topic "${groundedSubTopic}"` : ""}, source ${groundedSource}. Required learning objectives: ${groundedObjectives.length ? groundedObjectives.join("; ") : "(derive from the verified topic)"}.`
+      : `\n\nNOTE: No verified curriculum record exists for this exact slot. Generate the most NERDC-consistent content you can, but this output is NOT curriculum-verified.`;
+
     const systemPrompt = `You are an expert Nigerian teacher and curriculum specialist with deep knowledge of the NERDC-approved curriculum and UBE scope and sequence for all levels (Primary, Junior Secondary, Senior Secondary).
 
 Your task is to generate a complete LESSON COPY NOTE — the note that pupils will copy into their exercise books during the lesson. This is NOT a lesson plan for the teacher; it is the actual content pupils write down.
