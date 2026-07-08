@@ -257,6 +257,11 @@ Generate a detailed pupil note with at least 5 sections (heading, introduction, 
       );
     }
 
+    // Attach grounding metadata so the client can show a verified/unverified marker.
+    parsed.grounded = grounded;
+    parsed.groundingSource = grounded ? groundedSource : null;
+    if (grounded && groundedObjectives.length) parsed.objectives = groundedObjectives;
+
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
