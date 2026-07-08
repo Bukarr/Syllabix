@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin, Check, X, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin, Check, X, Sparkles, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -305,14 +305,15 @@ export default function LessonPlanForm() {
     if (status === 'complete') navigate('/');
   };
 
-  // Autosave every 30s
+  // Debounced draft persistence — saves ~2s after any change so a crash or
+  // closed tab loses at most a couple seconds of typing (works offline via IndexedDB).
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (plan.topic) {
-        handleSave('draft');
-      }
-    }, 30000);
-    return () => clearInterval(interval);
+    if (!plan.subject && !plan.topic?.trim()) return;
+    const t = setTimeout(() => {
+      handleSave('draft');
+    }, 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan]);
 
   const availableSubjects = profile?.subjects || [];
