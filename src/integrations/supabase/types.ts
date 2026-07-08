@@ -77,6 +77,84 @@ export type Database = {
         }
         Relationships: []
       }
+      curriculum_gaps: {
+        Row: {
+          class_level: string
+          created_at: string
+          id: string
+          subject: string
+          term: number | null
+          user_id: string | null
+          week: number | null
+        }
+        Insert: {
+          class_level: string
+          created_at?: string
+          id?: string
+          subject: string
+          term?: number | null
+          user_id?: string | null
+          week?: number | null
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          id?: string
+          subject?: string
+          term?: number | null
+          user_id?: string | null
+          week?: number | null
+        }
+        Relationships: []
+      }
+      curriculum_topics: {
+        Row: {
+          class_level: string
+          created_at: string
+          id: string
+          learning_objectives: string[] | null
+          source: string
+          source_url: string | null
+          sub_topic: string | null
+          subject: string
+          term: number
+          topic: string
+          updated_at: string
+          verified: boolean
+          week: number
+        }
+        Insert: {
+          class_level: string
+          created_at?: string
+          id?: string
+          learning_objectives?: string[] | null
+          source?: string
+          source_url?: string | null
+          sub_topic?: string | null
+          subject: string
+          term: number
+          topic: string
+          updated_at?: string
+          verified?: boolean
+          week: number
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          id?: string
+          learning_objectives?: string[] | null
+          source?: string
+          source_url?: string | null
+          sub_topic?: string | null
+          subject?: string
+          term?: number
+          topic?: string
+          updated_at?: string
+          verified?: boolean
+          week?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
