@@ -197,6 +197,8 @@ Ensure this content is sequenced appropriately for this point in the Nigerian ac
 
 Generate a detailed pupil note with at least 5 sections (heading, introduction, main content, worked examples, and summary). The content should be what pupils actually copy into their books.${weakTopicNote}`;
 
+    const userPromptGrounded = userPrompt + groundingNote;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -207,7 +209,7 @@ Generate a detailed pupil note with at least 5 sections (heading, introduction, 
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: userPromptGrounded },
         ],
       }),
     });
