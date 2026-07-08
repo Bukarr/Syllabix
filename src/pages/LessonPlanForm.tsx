@@ -741,6 +741,22 @@ export default function LessonPlanForm() {
 
           {aiDraft && (
             <div className="space-y-4 text-sm">
+              {/* Grounding marker: verified curriculum vs AI-generated */}
+              {aiDraft.grounded ? (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg border border-primary/30 bg-primary/5">
+                  <ShieldCheck className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-primary">
+                    Curriculum-verified{aiDraft.groundingSource ? ` (${aiDraft.groundingSource})` : ''} — this topic matches the approved scheme for this week.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg border border-warning/30 bg-warning/5">
+                  <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" style={{ color: 'hsl(var(--warning))' }} />
+                  <p className="text-[11px]" style={{ color: 'hsl(var(--warning))' }}>
+                    AI-generated, not curriculum-verified for this exact week. Please cross-check against your scheme of work.
+                  </p>
+                </div>
+              )}
               {aiDraft.objectives?.length > 0 && (
                 <section>
                   <h4 className="font-semibold text-foreground mb-1">Objectives</h4>
