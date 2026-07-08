@@ -511,10 +511,12 @@ export default function LessonPlanForm() {
                   </div>
                 );
               })()}
-              {!isOnline && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border">
-                  <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-[11px] text-muted-foreground">AI generation requires internet connection</p>
+              {(!isOnline || !reachable) && (
+                <div className="flex items-start gap-2 p-2 rounded-lg bg-warning/5 border border-warning/30">
+                  <WifiOff className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: 'hsl(var(--warning))' }} />
+                  <p className="text-[11px]" style={{ color: 'hsl(var(--warning))' }}>
+                    You're offline. Keep typing — everything is saved on this device as a draft. AI generation will work again once you reconnect; your saved plans stay available offline.
+                  </p>
                 </div>
               )}
             </div>
