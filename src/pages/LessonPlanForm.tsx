@@ -15,6 +15,7 @@ import { VoiceInput } from '@/components/VoiceInput';
 import { AssessmentGenerator } from '@/components/AssessmentGenerator';
 import { ResourceRecommendations } from '@/components/ResourceRecommendations';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useConnectivity } from '@/hooks/use-connectivity';
 import { trackActivity } from '@/lib/ai-personalization';
 import { supabase } from '@/integrations/supabase/client';
 import { CLASSES } from '@/lib/curriculum';
@@ -29,6 +30,7 @@ const DRAFT_KEY = 'syllabix:current-lesson-draft-id';
 export default function LessonPlanForm() {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
+  const { reachable, probe } = useConnectivity();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [step, setStep] = useState(0);
@@ -179,8 +181,10 @@ export default function LessonPlanForm() {
       toast.error('Please enter subject, class level, topic, and at least one objective');
       return;
     }
-    if (!isOnline) {
-      toast.error('Internet connection required for AI generation');
+    // Confirm real reachability, not just navigator.onLine (handles captive portals).
+    const canReach = await probe();
+    if (!canReach) {
+      toast.error('No working internet connection. Your details are saved as a draft — reconnect and tap "Generate with AI" again.');
       return;
     }
     setIsGenerating(true);
