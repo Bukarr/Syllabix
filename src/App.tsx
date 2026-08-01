@@ -19,6 +19,7 @@ const ClassTracker = lazy(() => import("./pages/ClassTracker"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const MyResources = lazy(() => import("./pages/MyResources"));
 const Auth = lazy(() => import("./pages/Auth"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Collaborate = lazy(() => import("./pages/Collaborate"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -112,6 +113,7 @@ const App = () => (
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="*"
