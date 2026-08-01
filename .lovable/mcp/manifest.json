@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://xhlnraxpfiditioibdnj.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "syllabix",
+      "version": "0.1.0",
+      "title": "Syllabix"
+    },
+    "tools": [
+      {
+        "name": "get_my_profile",
+        "title": "Get my teacher profile",
+        "description": "Return the signed-in teacher's Syllabix profile: display name, workspace role and school workspace code.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "lookup_curriculum",
+        "title": "Look up verified curriculum topics",
+        "description": "Look up verified NERDC-grounded curriculum topics and learning objectives by subject, class level, term and week.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Subject, e.g. Mathematics."
+            },
+            "classLevel": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Class level, e.g. 'JSS 1'."
+            },
+            "term": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3,
+              "description": "Term 1-3. Omit for all terms."
+            },
+            "week": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 13,
+              "description": "Week 1-13. Omit for all weeks."
+            }
+          },
+          "required": [
+            "subject",
+            "classLevel"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_shared_schemes",
+        "title": "List shared schemes of work",
+        "description": "List schemes of work shared in the signed-in teacher's school workspace, optionally filtered by subject, class level, term or status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filter by subject."
+            },
+            "classLevel": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filter by class level, e.g. 'JSS 2'."
+            },
+            "term": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3,
+              "description": "Filter by term 1-3."
+            },
+            "status": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filter by review status, e.g. 'pending' or 'approved'."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max rows to return (default 20)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_shared_scheme",
+        "title": "Get a shared scheme of work",
+        "description": "Fetch the full weekly breakdown of one shared scheme of work by its id, including all weekly topics and notes.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The scheme id returned by list_shared_schemes."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "comment_on_scheme",
+        "title": "Comment on a shared scheme",
+        "description": "Add a review comment to a shared scheme of work in the signed-in teacher's school workspace.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "schemeId": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The scheme id to comment on."
+            },
+            "comment": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000,
+              "description": "The comment text."
+            }
+          },
+          "required": [
+            "schemeId",
+            "comment"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
