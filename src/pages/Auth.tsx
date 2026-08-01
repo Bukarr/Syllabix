@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,10 @@ import { toast } from 'sonner';
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const rawNext = params.get('next') ?? '';
+  // Only allow same-origin relative paths.
+  const next = /^\/(?!\/)/.test(rawNext) ? rawNext : '/';
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,13 +27,17 @@ export default function Auth() {
     let active = true;
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active && session) navigate('/', { replace: true });
+      if (active && session) {
+        if (next === '/') navigate('/', { replace: true });
+        else window.location.replace(next);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!active) return;
       if (session) {
-        navigate('/', { replace: true });
+        if (next === '/') navigate('/', { replace: true });
+        else window.location.replace(next);
       } else {
         setCheckingSession(false);
       }
@@ -39,7 +47,7 @@ export default function Auth() {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, next]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +83,7 @@ export default function Auth() {
           password,
           options: {
             data: { display_name: displayName },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}${next}`,
           },
         });
         if (error) throw error;
@@ -84,7 +92,8 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success('Welcome back!');
-        navigate('/');
+        if (next === '/') navigate('/');
+        else window.location.replace(next);
       }
     } catch (err: any) {
       toast.error(err.message || 'Authentication failed');
