@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getAllLessonPlans, deleteLessonPlan, type LessonPlan } from '@/lib/db';
+import { getAllLessonPlans, type LessonPlan } from '@/lib/db';
+import { deleteLessonPlanOfflineFirst, pullLessonPlans } from '@/services/lesson-plans';
 import { exportLessonPlanToPDF } from '@/lib/export';
 import { toast } from 'sonner';
 
@@ -23,6 +24,12 @@ export default function MyPlans() {
   }, []);
 
   async function loadPlans() {
+    // Pull any cloud changes first (no-op when offline or signed out).
+    try {
+      await pullLessonPlans();
+    } catch {
+      /* offline — local data is still authoritative */
+    }
     const lps = await getAllLessonPlans();
     setPlans(lps.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
     setLoading(false);
@@ -36,7 +43,7 @@ export default function MyPlans() {
   });
 
   const handleDelete = async (id: string) => {
-    await deleteLessonPlan(id);
+    await deleteLessonPlanOfflineFirst(id);
     toast.success('Lesson plan deleted');
     loadPlans();
   };
