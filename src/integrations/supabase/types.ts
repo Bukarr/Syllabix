@@ -155,6 +155,54 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_plans: {
+        Row: {
+          class_level: string
+          created_at: string
+          deleted: boolean
+          id: string
+          local_id: string
+          plan: Json
+          status: string
+          subject: string
+          term: number
+          topic: string
+          updated_at: string
+          user_id: string
+          week: number
+        }
+        Insert: {
+          class_level?: string
+          created_at?: string
+          deleted?: boolean
+          id?: string
+          local_id: string
+          plan?: Json
+          status?: string
+          subject?: string
+          term?: number
+          topic?: string
+          updated_at?: string
+          user_id: string
+          week?: number
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          deleted?: boolean
+          id?: string
+          local_id?: string
+          plan?: Json
+          status?: string
+          subject?: string
+          term?: number
+          topic?: string
+          updated_at?: string
+          user_id?: string
+          week?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
