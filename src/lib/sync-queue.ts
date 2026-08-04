@@ -2,7 +2,7 @@ import { openDB, type DBSchema } from 'idb';
 
 export interface SyncOperation {
   id: string;
-  table: 'shared_schemes' | 'scheme_comments' | 'profiles';
+  table: 'shared_schemes' | 'scheme_comments' | 'profiles' | 'lesson_plans';
   action: 'insert' | 'update' | 'delete';
   payload: Record<string, unknown>;
   /** For update/delete — match criteria */

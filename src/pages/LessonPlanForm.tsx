@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
+import { getProfile, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
+import { saveLessonPlanOfflineFirst } from '@/services/lesson-plans';
 import { getAllClassGroups, getWeakTopics, type ClassGroup } from '@/lib/db-tracker';
 import { toast } from 'sonner';
 import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
@@ -297,7 +298,8 @@ export default function LessonPlanForm() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await saveLessonPlan(fullPlan);
+    // Offline-first: always lands in IndexedDB, then syncs (or queues) to the cloud.
+    await saveLessonPlanOfflineFirst(fullPlan);
     setPlanId(fullPlan.id);
     if (status === 'draft') {
       localStorage.setItem(DRAFT_KEY, fullPlan.id);
