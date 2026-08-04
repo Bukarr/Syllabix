@@ -1,8 +1,8 @@
 // Runs before `vite dev` and `vite build` (predev/prebuild hooks); writes public/sitemap.xml.
-import { writeFileSync } from "fs";
-import { resolve } from "path";
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
-const BASE_URL = "https://syllabixng.lovable.app";
+const BASE_URL = "https://syllabixng.vercel.app";
 
 interface SitemapEntry {
   path: string;
