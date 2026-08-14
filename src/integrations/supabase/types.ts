@@ -77,6 +77,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_admins: {
+        Row: {
+          created_at: string
+          id: string
+          note: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       curriculum_gaps: {
         Row: {
           class_level: string
