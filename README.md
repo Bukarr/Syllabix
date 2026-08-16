@@ -197,6 +197,16 @@ the live API).
 
 ## Support
 
+> **Areas needing manual attention**
+>
+> - ~54 `any` types remain in legacy screens and generated shadcn UI files; they
+>   are cosmetic lint warnings, not runtime risks, and are being typed
+>   incrementally.
+> - The app accepts no user file uploads (only JSON backups written to a private
+>   bucket owned by the signing-in user), so malware scanning is not applicable.
+>   Add magic-byte checks and AV scanning before enabling any upload feature.
+> - MFA (TOTP) is available in the auth provider but not yet surfaced in the UI.
+
 - In-app **Help Center** (`/help`) — FAQs for install, login and lesson
   generation.
 - **Contact form** (`/contact`) — works offline and syncs when back online.
