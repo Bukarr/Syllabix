@@ -119,8 +119,15 @@ const App = () => (
             path="*"
             element={
               <div className="min-h-screen bg-background">
+                {/* Accessibility: keyboard users can jump past the nav (WCAG 2.4.1) */}
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+                >
+                  Skip to main content
+                </a>
                 <TopBar />
-                <main>
+                <main id="main-content" tabIndex={-1}>
                   <Suspense fallback={<ContentFallback />}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
