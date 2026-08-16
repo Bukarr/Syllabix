@@ -66,7 +66,7 @@ export function useSyncQueue() {
         if (error) throw error;
       }
       return true;
-    } catch (err: any) {
+    } catch (err) {
       console.error(`[Sync] Failed op ${op.id}:`, err?.message);
       return false;
     }

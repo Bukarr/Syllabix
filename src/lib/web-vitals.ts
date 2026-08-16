@@ -8,7 +8,6 @@ import { onCLS, onINP, onLCP, onFCP, onTTFB, type Metric } from "web-vitals";
  */
 function handleMetric(metric: Metric) {
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
     console.log(`[web-vitals] ${metric.name}: ${Math.round(metric.value)} (${metric.rating})`);
     return;
   }
