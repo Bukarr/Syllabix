@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { AppLogo } from '@/components/AppLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { passwordIssues } from '@/lib/validation';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function ResetPassword() {
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const issues = passwordIssues(password);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -30,8 +32,8 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    if (issues.length > 0) {
+      toast.error(`Password needs: ${issues.join(', ').toLowerCase()}`);
       return;
     }
     if (password !== confirm) {
@@ -79,8 +81,20 @@ export default function ResetPassword() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="pl-10 h-11"
+                aria-describedby="reset-password-requirements"
+                aria-invalid={password.length > 0 && issues.length > 0}
               />
             </div>
+            <ul id="reset-password-requirements" className="mt-2 space-y-1">
+              {['At least 8 characters', 'One uppercase letter', 'One lowercase letter', 'One number', 'One special character'].map(rule => (
+                <li
+                  key={rule}
+                  className={`text-[11px] ${issues.includes(rule) ? 'text-muted-foreground' : 'text-primary'}`}
+                >
+                  {issues.includes(rule) ? '•' : '✓'} {rule}
+                </li>
+              ))}
+            </ul>
           </div>
           <div>
             <Label className="text-xs font-medium">Confirm Password</Label>
