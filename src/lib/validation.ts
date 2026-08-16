@@ -1,5 +1,29 @@
 import { z } from 'zod';
 
+/**
+ * Strong password policy (OWASP-aligned): min 8 chars with upper, lower,
+ * number and special character. Applied on sign-up and password reset.
+ * Kept in one place so client screens and tests never drift apart.
+ */
+export const PASSWORD_RULES = [
+  { test: (v: string) => v.length >= 8, message: 'At least 8 characters' },
+  { test: (v: string) => /[A-Z]/.test(v), message: 'One uppercase letter' },
+  { test: (v: string) => /[a-z]/.test(v), message: 'One lowercase letter' },
+  { test: (v: string) => /[0-9]/.test(v), message: 'One number' },
+  { test: (v: string) => /[^A-Za-z0-9]/.test(v), message: 'One special character' },
+] as const;
+
+export function passwordIssues(value: string): string[] {
+  return PASSWORD_RULES.filter(r => !r.test(value)).map(r => r.message);
+}
+
+export const passwordSchema = z
+  .string()
+  .max(128, 'Password must be under 128 characters')
+  .refine(v => passwordIssues(v).length === 0, {
+    message: 'Password must contain 8+ characters, uppercase, lowercase, a number and a special character',
+  });
+
 export const profileSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name must be under 100 characters'),
   schoolName: z.string().trim().min(2, 'School name must be at least 2 characters').max(200, 'School name must be under 200 characters'),
