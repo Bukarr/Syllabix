@@ -170,9 +170,8 @@ export default function Collaborate() {
 
   const handleChangeMemberRole = async (targetUserId: string, newRole: RoleOption) => {
     setUpdatingRole(targetUserId);
-    const { error } = await supabase.rpc('set_member_role', {
-      _target_user_id: targetUserId,
-      _new_role: newRole,
+    const { error } = await supabase.functions.invoke('workspace-set-role', {
+      body: { targetUserId, newRole },
     });
     setUpdatingRole(null);
     if (error) {
