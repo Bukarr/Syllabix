@@ -402,10 +402,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      set_member_role: {
-        Args: { _new_role: string; _target_user_id: string }
-        Returns: undefined
-      }
     }
     Enums: {
       [_ in never]: never
