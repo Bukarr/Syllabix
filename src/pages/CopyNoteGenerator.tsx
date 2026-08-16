@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText, Edit3, History, ChevronDown, ChevronUp, Eye, Share2 } from 'lucide-react';
@@ -287,8 +288,8 @@ export default function CopyNoteGenerator() {
         },
         onError: (err) => { toast.error(err); setIsStreaming(false); },
       });
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to generate note');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to generate note');
       setIsStreaming(false);
     }
   }, [messages, isStreaming, classLevel, subject, currentTopic, filteredSOWs, currentNoteId, aiNotes]);
@@ -345,7 +346,7 @@ export default function CopyNoteGenerator() {
       try {
         await navigator.share(shareData);
         toast.success('Note shared!');
-      } catch (e: any) {
+      } catch (e) {
         if (e.name !== 'AbortError') {
           await navigator.clipboard.writeText(cleanText);
           toast.success('Copied to clipboard for sharing!');

@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import {
   getProfile, saveProfile, getAllLessonPlans, saveLessonPlan,
@@ -110,8 +111,8 @@ async function applyBackup(backup: BackupData): Promise<{ success: boolean; erro
 
     const stats = `Restored: ${plansRestored} plans, ${sowsRestored} schemes, ${notesRestored} notes`;
     return { success: true, stats };
-  } catch (e: any) {
-    return { success: false, error: e.message || 'Restore failed' };
+  } catch (e) {
+    return { success: false, error: errorMessage(e) || 'Restore failed' };
   }
 }
 

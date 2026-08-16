@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -77,8 +78,8 @@ export default function Auth() {
         if (error) throw error;
         toast.success('Password reset link sent! Check your email.');
         setMode('login');
-      } catch (err: any) {
-        toast.error(err.message || 'Could not send reset link');
+      } catch (err) {
+        toast.error(errorMessage(err) || 'Could not send reset link');
       } finally {
         setLoading(false);
       }
@@ -117,7 +118,7 @@ export default function Auth() {
         if (next === '/') navigate('/');
         else window.location.replace(next);
       }
-    } catch (err: any) {
+    } catch (err) {
       if (mode === 'login') {
         // Throttle credential stuffing; the message stays generic on purpose.
         const lockedFor = recordFailure();
@@ -128,7 +129,7 @@ export default function Auth() {
             : 'Incorrect email or password. Please check and try again.',
         );
       } else {
-        toast.error(err.message || 'Could not create your account. Please try again.');
+        toast.error(errorMessage(err) || 'Could not create your account. Please try again.');
       }
     } finally {
       setLoading(false);

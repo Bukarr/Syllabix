@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -221,8 +222,8 @@ export default function LessonPlanForm() {
       setAiDraft(data);
       if (data.curriculumPosition) setCurriculumPosition(data.curriculumPosition);
       toast.success('AI plan ready — review it before accepting');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to generate lesson note');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to generate lesson note');
     } finally {
       setIsGenerating(false);
     }

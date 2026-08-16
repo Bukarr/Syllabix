@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -46,8 +47,8 @@ export default function ResetPassword() {
       if (error) throw error;
       toast.success('Password updated! You are now signed in.');
       navigate('/', { replace: true });
-    } catch (err: any) {
-      toast.error(err.message || 'Could not update password');
+    } catch (err) {
+      toast.error(errorMessage(err) || 'Could not update password');
     } finally {
       setLoading(false);
     }
