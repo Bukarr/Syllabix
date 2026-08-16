@@ -73,6 +73,56 @@ teachers can focus on teaching.
 - **Terms of Service** (`/terms`) and **Privacy Policy** (`/privacy`) explain
   exactly how data is handled.
 
+### Security checklist (implemented)
+
+| Area | Control |
+| --- | --- |
+| Authentication | Managed auth provider (no custom crypto); passwords hashed by the provider; email verification on sign-up |
+| Password policy | Minimum 8 chars with uppercase, lowercase, number and special character — enforced on sign-up and reset (`src/lib/validation.ts`) |
+| Password reset | Single-use, time-limited provider tokens; rate limited |
+| Brute force | Client-side lockout after 5 failed sign-ins for 15 minutes (`src/lib/login-guard.ts`) plus provider-side rate limiting |
+| Sessions | Provider-managed tokens with refresh rotation; no custom session cookies |
+| Authorization | Role checks (`teacher`, `subject_head`, `headmaster`, `director`, `admin`) run server-side in edge functions; UI checks are cosmetic only |
+| Database | RLS on every user table, scoped to `auth.uid()`; privileged helpers live in the `private` schema; explicit `GRANT`s per role |
+| Input validation | `zod` schemas client-side, `sanitizeText` length/format validation server-side; parameterized queries only (no string-built SQL) |
+| XSS | No `dangerouslySetInnerHTML` on user content; AI output rendered as plain text |
+| CORS | Per-request origin allowlist (first-party origins only) — no wildcard (`supabase/functions/_shared/http/cors.ts`) |
+| Rate limiting | Sliding-window server-side limiter per user/IP per endpoint (`api_rate_limits`) |
+| Headers | Strict CSP, HSTS, `nosniff`, `SAMEORIGIN`, Referrer-Policy, Permissions-Policy |
+| Secrets | All keys in environment/secret store; only the public anon key ships in the bundle; `.env` git-ignored |
+| Logging | Structured JSON logs for auth denials, rate-limit blocks, account export/delete; no passwords or tokens logged |
+| Errors | Global handler returns generic messages; details stay server-side |
+| Dependencies | `npm audit` clean of high/critical; text lockfile committed; transitive pins via `overrides` |
+
+### Data rights & retention
+
+- **Export:** Settings → *Your Data Rights* → *Download My Data (JSON)* returns
+  every server-side record plus local drafts (GDPR/NDPR portability).
+- **Delete:** *Delete My Account* erases all owned rows and the auth account.
+- **Data minimization:** we collect name, school name, teaching context and
+  email only — no addresses, phone numbers or student identifiers beyond the
+  roster names a teacher chooses to enter.
+- **Retention:** support messages are kept 12 months; rate-limit rows are purged
+  hourly; deleted accounts are removed immediately (no soft delete).
+- **Analytics:** none. Core Web Vitals are measured in-browser and never sent to
+  a third-party tracker, so no cookie consent banner is required.
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env`. Frontend values are public by design (RLS
+protects the data); backend secrets live in the Cloud secret store and are never
+committed.
+
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` | frontend | Backend API URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | frontend | Public anon key |
+| `VITE_SUPABASE_PROJECT_ID` | frontend | Project reference |
+| `LOVABLE_API_KEY` | backend | AI gateway key |
+| `ALLOWED_ORIGINS` | backend | Optional extra CORS origins (comma separated) |
+
 ---
 
 ## Project Structure
@@ -103,6 +153,45 @@ npm run build    # production build
 
 > Offline/PWA behavior only works in the **published** app, not the in-editor
 > preview.
+
+---
+
+## Testing
+
+```sh
+npx vitest run     # unit + integration tests
+npm audit          # dependency vulnerability scan
+npx tsc --noEmit   # type check
+```
+
+Covered by automated tests: password policy, login lockout, and the deny-all
+policy protecting the internal rate-limit table (a real network check against
+the live API).
+
+### Manual security test checklist
+
+1. Sign up with `password` → rejected by the password policy.
+2. Enter a wrong password 5 times → sign-in locks for 15 minutes.
+3. Sign in as a teacher and try a workspace role change → rejected server-side.
+4. Call an edge function from an unknown origin → no CORS headers returned.
+5. Call an AI endpoint 25 times in a minute → HTTP 429 with `Retry-After`.
+6. Query another user's lesson plans directly through the API → zero rows.
+7. Delete your account → sign-in with those credentials fails afterwards.
+8. Tab through any page → visible focus ring and a working skip-to-content link.
+
+---
+
+## Deployment
+
+- Publish from Lovable; hosting terminates TLS and redirects HTTP → HTTPS.
+- Security headers ship with the build via `public/_headers` — verify with
+  `curl -I https://<your-domain>`.
+- Static assets are served immutable for one year; `sw.js` is never cached.
+- Database backups are managed by the Cloud backend (daily, point-in-time).
+  Users can also self-backup from Settings → Cloud Backup, and restore from a
+  downloaded file.
+- Monitoring: edge function logs contain structured security events; Core Web
+  Vitals are reported in-browser.
 
 ---
 
