@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://syllabixng.lovable.app/sitemap.xml
+Sitemap: https://syllabixng.vercel.app/sitemap.xml
