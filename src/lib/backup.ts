@@ -39,37 +39,60 @@ export async function collectBackup(): Promise<BackupData> {
   };
 }
 
-/** Upload backup to cloud storage */
+/**
+ * Upload backup to private cloud storage through the `secure-upload` service.
+ * The service re-validates size, magic bytes and envelope shape server-side and
+ * derives the storage path from the JWT, so the client cannot target other users.
+ */
 export async function uploadBackup(): Promise<{ success: boolean; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Sign in to backup your data' };
 
   const backup = await collectBackup();
-  const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+  const content = JSON.stringify(backup);
+  if (new Blob([content]).size > 5 * 1024 * 1024) {
+    return { success: false, error: 'Your data exceeds the 5 MB backup limit.' };
+  }
 
-  const { error } = await supabase.storage
-    .from('user-backups')
-    .upload(backupPath(user.id), blob, { upsert: true });
-
-  if (error) return { success: false, error: error.message };
+  const { data, error } = await supabase.functions.invoke('secure-upload', {
+    body: { action: 'upload', content },
+  });
+  if (error) return { success: false, error: errorMessage(error) || 'Backup failed' };
+  if (data && (data as { error?: string }).error) {
+    return { success: false, error: (data as { error?: string }).error };
+  }
   return { success: true };
 }
 
-/** Download and restore backup from cloud */
+/**
+ * Restore from the cloud using a short-lived signed URL that is issued with
+ * Content-Disposition: attachment (never rendered inline in our origin).
+ */
 export async function downloadAndRestore(): Promise<{ success: boolean; error?: string; stats?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Sign in to restore your data' };
 
-  const { data, error } = await supabase.storage
-    .from('user-backups')
-    .download(backupPath(user.id));
+  const { data, error } = await supabase.functions.invoke('secure-upload', {
+    body: { action: 'download' },
+  });
+  if (error) return { success: false, error: 'No backup found' };
 
-  if (error) return { success: false, error: error.message };
-  if (!data) return { success: false, error: 'No backup found' };
+  const url = (data as { url?: string })?.url;
+  if (!url) return { success: false, error: 'No backup found' };
 
-  const text = await data.text();
-  const backup: BackupData = JSON.parse(text);
-  return applyBackup(backup);
+  const res = await fetch(url);
+  if (!res.ok) return { success: false, error: 'Could not download backup' };
+
+  const text = await res.text();
+  if (text.length > 5 * 1024 * 1024) return { success: false, error: 'Backup file is too large' };
+
+  try {
+    const backup: BackupData = JSON.parse(text);
+    if (typeof backup.version !== 'number') return { success: false, error: 'Invalid backup file' };
+    return applyBackup(backup);
+  } catch {
+    return { success: false, error: 'Invalid backup file' };
+  }
 }
 
 /** Apply a backup object to local IndexedDB */
