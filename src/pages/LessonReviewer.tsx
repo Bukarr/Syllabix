@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ClipboardCheck, Loader2, Send, Star, AlertTriangle, CheckCircle2, ArrowRight, Sparkles, WifiOff } from 'lucide-react';
@@ -75,8 +76,8 @@ export default function LessonReviewer() {
       const result = await resp.json();
       setReview(result);
       toast.success('Review complete!');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to review lesson plan');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to review lesson plan');
     } finally {
       setIsReviewing(false);
     }
@@ -136,8 +137,8 @@ export default function LessonReviewer() {
         }
       }
       toast.success('Improved lesson plan generated!');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to improve lesson plan');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to improve lesson plan');
     } finally {
       setIsImproving(false);
     }

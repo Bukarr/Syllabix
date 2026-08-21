@@ -1,6 +1,6 @@
 // Runs before `vite dev` and `vite build` (predev/prebuild hooks); writes public/sitemap.xml.
-import { writeFileSync } from "fs";
-import { resolve } from "path";
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const BASE_URL = "https://syllabixng.vercel.app";
 
@@ -11,12 +11,16 @@ interface SitemapEntry {
 }
 
 // Public, indexable routes only. Auth-gated/internal routes are omitted.
+// Intentionally excluded (private/auth or noindex): /auth, /reset-password,
+// /my-plans, /settings, and other authenticated dashboard routes.
 const entries: SitemapEntry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/onboarding", changefreq: "monthly", priority: "0.9" },
   { path: "/lesson-plan", changefreq: "monthly", priority: "0.8" },
   { path: "/scheme", changefreq: "monthly", priority: "0.8" },
   { path: "/ai-notes", changefreq: "monthly", priority: "0.8" },
   { path: "/templates", changefreq: "monthly", priority: "0.7" },
+  { path: "/templates/lesson-plans", changefreq: "monthly", priority: "0.9" },
   { path: "/help", changefreq: "monthly", priority: "0.6" },
   { path: "/contact", changefreq: "yearly", priority: "0.5" },
   { path: "/terms", changefreq: "yearly", priority: "0.3" },

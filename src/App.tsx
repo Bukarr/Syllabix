@@ -12,12 +12,14 @@ const MyPlans = lazy(() => import("./pages/MyPlans"));
 const SchemeOfWork = lazy(() => import("./pages/SchemeOfWork"));
 const CopyNoteGenerator = lazy(() => import("./pages/CopyNoteGenerator"));
 const Templates = lazy(() => import("./pages/Templates"));
+const LessonPlanTemplates = lazy(() => import("./pages/LessonPlanTemplates"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const LessonReviewer = lazy(() => import("./pages/LessonReviewer"));
 const ClassTracker = lazy(() => import("./pages/ClassTracker"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const MyResources = lazy(() => import("./pages/MyResources"));
 const Auth = lazy(() => import("./pages/Auth"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Collaborate = lazy(() => import("./pages/Collaborate"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -111,13 +113,21 @@ const App = () => (
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="*"
             element={
               <div className="min-h-screen bg-background">
+                {/* Accessibility: keyboard users can jump past the nav (WCAG 2.4.1) */}
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+                >
+                  Skip to main content
+                </a>
                 <TopBar />
-                <main>
+                <main id="main-content" tabIndex={-1}>
                   <Suspense fallback={<ContentFallback />}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
@@ -126,6 +136,7 @@ const App = () => (
                     <Route path="/scheme" element={<SchemeOfWork />} />
                     <Route path="/ai-notes" element={<CopyNoteGenerator />} />
                     <Route path="/templates" element={<Templates />} />
+                    <Route path="/templates/lesson-plans" element={<LessonPlanTemplates />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/reviewer" element={<LessonReviewer />} />
                     <Route path="/class-tracker" element={<ClassTracker />} />

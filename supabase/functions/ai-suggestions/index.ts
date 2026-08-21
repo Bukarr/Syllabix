@@ -1,7 +1,9 @@
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
+import { corsHeadersFor } from "../_shared/http/cors.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 Deno.serve(async (req) => {
+  // Per-request CORS: only first-party origins are echoed back.
+  const corsHeaders = corsHeadersFor(req);
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

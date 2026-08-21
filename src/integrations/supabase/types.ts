@@ -77,6 +77,153 @@ export type Database = {
         }
         Relationships: []
       }
+      app_admins: {
+        Row: {
+          created_at: string
+          id: string
+          note: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      curriculum_gaps: {
+        Row: {
+          class_level: string
+          created_at: string
+          id: string
+          subject: string
+          term: number | null
+          user_id: string | null
+          week: number | null
+        }
+        Insert: {
+          class_level: string
+          created_at?: string
+          id?: string
+          subject: string
+          term?: number | null
+          user_id?: string | null
+          week?: number | null
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          id?: string
+          subject?: string
+          term?: number | null
+          user_id?: string | null
+          week?: number | null
+        }
+        Relationships: []
+      }
+      curriculum_topics: {
+        Row: {
+          class_level: string
+          created_at: string
+          id: string
+          learning_objectives: string[] | null
+          source: string
+          source_url: string | null
+          sub_topic: string | null
+          subject: string
+          term: number
+          topic: string
+          updated_at: string
+          verified: boolean
+          week: number
+        }
+        Insert: {
+          class_level: string
+          created_at?: string
+          id?: string
+          learning_objectives?: string[] | null
+          source?: string
+          source_url?: string | null
+          sub_topic?: string | null
+          subject: string
+          term: number
+          topic: string
+          updated_at?: string
+          verified?: boolean
+          week: number
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          id?: string
+          learning_objectives?: string[] | null
+          source?: string
+          source_url?: string | null
+          sub_topic?: string | null
+          subject?: string
+          term?: number
+          topic?: string
+          updated_at?: string
+          verified?: boolean
+          week?: number
+        }
+        Relationships: []
+      }
+      lesson_plans: {
+        Row: {
+          class_level: string
+          created_at: string
+          deleted: boolean
+          id: string
+          local_id: string
+          plan: Json
+          status: string
+          subject: string
+          term: number
+          topic: string
+          updated_at: string
+          user_id: string
+          week: number
+        }
+        Insert: {
+          class_level?: string
+          created_at?: string
+          deleted?: boolean
+          id?: string
+          local_id: string
+          plan?: Json
+          status?: string
+          subject?: string
+          term?: number
+          topic?: string
+          updated_at?: string
+          user_id: string
+          week?: number
+        }
+        Update: {
+          class_level?: string
+          created_at?: string
+          deleted?: boolean
+          id?: string
+          local_id?: string
+          plan?: Json
+          status?: string
+          subject?: string
+          term?: number
+          topic?: string
+          updated_at?: string
+          user_id?: string
+          week?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -254,15 +401,6 @@ export type Database = {
           _window_seconds: number
         }
         Returns: boolean
-      }
-      get_my_current_school_code: { Args: never; Returns: string }
-      get_my_profile_role: { Args: never; Returns: string }
-      get_my_school_code: { Args: never; Returns: string }
-      get_user_school_code: { Args: { _user_id: string }; Returns: string }
-      is_workspace_admin: { Args: never; Returns: boolean }
-      set_member_role: {
-        Args: { _new_role: string; _target_user_id: string }
-        Returns: undefined
       }
     }
     Enums: {

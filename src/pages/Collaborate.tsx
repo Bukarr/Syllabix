@@ -170,9 +170,8 @@ export default function Collaborate() {
 
   const handleChangeMemberRole = async (targetUserId: string, newRole: RoleOption) => {
     setUpdatingRole(targetUserId);
-    const { error } = await supabase.rpc('set_member_role', {
-      _target_user_id: targetUserId,
-      _new_role: newRole,
+    const { error } = await supabase.functions.invoke('workspace-set-role', {
+      body: { targetUserId, newRole },
     });
     setUpdatingRole(null);
     if (error) {
@@ -226,7 +225,13 @@ export default function Collaborate() {
 
   const handleJoinSchool = async () => {
     if (!joinCode.trim() || !user) return;
-    const code = joinCode.trim().toUpperCase();
+    // Normalize to match server-side validation: trim, remove inner spaces, uppercase.
+    const code = joinCode.replace(/\s+/g, '').toUpperCase();
+    const alnum = code.replace(/[^A-Z0-9]/g, '');
+    if (!/^[A-Z0-9-]{6,40}$/.test(code) || alnum.length < 6) {
+      toast.error('Invalid code. Use 6-40 letters, numbers or hyphens.');
+      return;
+    }
     const { error } = await supabase
       .from('profiles')
       .update({ school_code: code })

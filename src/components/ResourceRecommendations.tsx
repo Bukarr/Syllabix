@@ -122,6 +122,7 @@ export function ResourceRecommendations({ subject, classLevel, topic, visible }:
       {resources.map((r, i) => {
         const Icon = typeIcons[r.type] || LinkIcon;
         const isSaved = savedIds.has(r.title);
+        const safeUrl = r.url && /^https?:\/\//i.test(r.url) ? r.url : '#';
         return (
           <div key={i} className="glass-card rounded-xl p-3 space-y-2">
             <div className="flex items-start gap-2.5">
@@ -135,7 +136,7 @@ export function ResourceRecommendations({ subject, classLevel, topic, visible }:
               </div>
             </div>
             <div className="flex gap-2">
-              <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+              <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
                 <Button variant="outline" size="sm" className="w-full text-[10px] h-7">
                   <ExternalLink className="h-3 w-3 mr-1" /> Open Link
                 </Button>

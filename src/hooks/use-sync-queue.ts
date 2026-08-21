@@ -9,6 +9,7 @@ import {
 } from '@/lib/sync-queue';
 import { useOnlineStatus } from './use-online-status';
 import { toast } from 'sonner';
+import { processLessonPlanOp, pullLessonPlans } from '@/services/lesson-plans';
 
 const MAX_RETRIES = 5;
 
@@ -26,6 +27,10 @@ export function useSyncQueue() {
   /** Process a single operation against Supabase */
   const processOp = async (op: SyncOperation): Promise<boolean> => {
     try {
+      // Lesson plans have their own offline-first service (soft deletes + upserts).
+      if (op.table === 'lesson_plans') {
+        return await processLessonPlanOp(op);
+      }
       if (op.action === 'insert') {
         const { error } = await (supabase.from(op.table) as any).insert(op.payload);
         if (error) throw error;
@@ -61,7 +66,7 @@ export function useSyncQueue() {
         if (error) throw error;
       }
       return true;
-    } catch (err: any) {
+    } catch (err) {
       console.error(`[Sync] Failed op ${op.id}:`, err?.message);
       return false;
     }
@@ -110,7 +115,11 @@ export function useSyncQueue() {
   // Auto-process queue when coming back online
   useEffect(() => {
     if (isOnline) {
-      processQueue();
+      processQueue().then(() => {
+        pullLessonPlans().catch(err =>
+          console.error('[Sync] lesson plan pull failed:', (err as Error)?.message),
+        );
+      });
     }
   }, [isOnline, processQueue]);
 

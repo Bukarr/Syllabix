@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState } from 'react';
 import { Loader2, FileQuestion, Download, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,8 +79,8 @@ export function AssessmentGenerator({ open, onOpenChange, subject, classLevel, t
       const data = await resp.json();
       setResult(data);
       toast.success('Assessment generated!');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to generate assessment');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to generate assessment');
     } finally {
       setIsGenerating(false);
     }

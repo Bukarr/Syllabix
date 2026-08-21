@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Globe, Trash2, Download, Bell, Clock, BookOpen, CloudUpload, CloudDownload, FileUp, FileDown, Loader2, Shield, Sun, Moon, Mail, MessageCircle, Send, LifeBuoy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +35,7 @@ export default function SettingsPage() {
   const [lastBackup, setLastBackup] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [theme, setTheme] = useState<Theme>(getStoredTheme());
+  const [privacyLoading, setPrivacyLoading] = useState<'export' | 'delete' | null>(null);
 
   useEffect(() => {
     getProfile().then(p => p && setProfile(p));
@@ -89,6 +90,54 @@ export default function SettingsPage() {
       await db.clear('lessonPlans');
       await db.clear('schemesOfWork');
       toast.success('All lesson plans and schemes deleted');
+    }
+  };
+
+  /** GDPR/NDPR portability — download every server-side record we hold. */
+  const handleDownloadMyData = async () => {
+    setPrivacyLoading('export');
+    try {
+      const { data, error } = await supabase.functions.invoke('account-data', {
+        body: { action: 'export' },
+      });
+      if (error) throw error;
+      const local = {
+        lessonPlans: await getAllLessonPlans(),
+        schemesOfWork: await getAllSOW(),
+      };
+      const blob = new Blob([JSON.stringify({ ...data, local }, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `syllabix-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Your data has been downloaded');
+    } catch {
+      toast.error('Could not prepare your data export. Please try again in a moment.');
+    } finally {
+      setPrivacyLoading(null);
+    }
+  };
+
+  /** Right to erasure — deletes server records and the account itself. */
+  const handleDeleteAccount = async () => {
+    if (!confirm('Permanently delete your account and all associated records? This cannot be undone.')) return;
+    setPrivacyLoading('delete');
+    try {
+      const { error } = await supabase.functions.invoke('account-data', {
+        body: { action: 'delete' },
+      });
+      if (error) throw error;
+      await supabase.auth.signOut();
+      toast.success('Your account and data have been deleted');
+      navigate('/');
+    } catch {
+      toast.error('Could not delete your account. Please contact support.');
+    } finally {
+      setPrivacyLoading(null);
     }
   };
 
@@ -429,6 +478,44 @@ export default function SettingsPage() {
           </Button>
         </div>
 
+        {/* Your data rights (GDPR / NDPR) */}
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="h-5 w-5 text-primary" />
+            <h3 className="font-heading font-semibold">Your Data Rights</h3>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Download everything we store about you, or permanently delete your account.
+            {!isSignedIn && ' Sign in to use these options.'}
+          </p>
+          <Button
+            variant="outline"
+            className="w-full touch-target"
+            disabled={!isSignedIn || privacyLoading !== null}
+            onClick={handleDownloadMyData}
+          >
+            {privacyLoading === 'export' ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4 mr-2" />
+            )}
+            Download My Data (JSON)
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full touch-target text-destructive border-destructive/20 hover:bg-destructive/10"
+            disabled={!isSignedIn || privacyLoading !== null}
+            onClick={handleDeleteAccount}
+          >
+            {privacyLoading === 'delete' ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4 mr-2" />
+            )}
+            Delete My Account
+          </Button>
+        </div>
+
         {/* Contact Us */}
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <div className="flex items-center gap-3 mb-2">
@@ -489,9 +576,9 @@ export default function SettingsPage() {
 
         {/* Legal */}
         <div className="flex items-center justify-center gap-4 pt-2 pb-1 text-xs text-muted-foreground">
-          <a href="/terms" className="hover:text-primary hover:underline">Terms of Service</a>
+          <Link to="/terms" className="hover:text-primary hover:underline">Terms of Service</Link>
           <span aria-hidden>·</span>
-          <a href="/privacy" className="hover:text-primary hover:underline">Privacy Policy</a>
+          <Link to="/privacy" className="hover:text-primary hover:underline">Privacy Policy</Link>
         </div>
       </motion.div>
     </div>

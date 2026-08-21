@@ -1,13 +1,15 @@
+import { errorMessage } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin, Check, X, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, BookOpen, Loader2, WifiOff, FileQuestion, MapPin, Check, X, Sparkles, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { getProfile, saveLessonPlan, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
+import { getProfile, getAllSOW, getAllLessonPlans, type LessonPlan, type TeacherProfile, type SchemeOfWork } from '@/lib/db';
+import { saveLessonPlanOfflineFirst } from '@/services/lesson-plans';
 import { getAllClassGroups, getWeakTopics, type ClassGroup } from '@/lib/db-tracker';
 import { toast } from 'sonner';
 import { lessonPlanSchema, type ValidationErrors, validateAll } from '@/lib/validation';
@@ -15,6 +17,7 @@ import { VoiceInput } from '@/components/VoiceInput';
 import { AssessmentGenerator } from '@/components/AssessmentGenerator';
 import { ResourceRecommendations } from '@/components/ResourceRecommendations';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useConnectivity } from '@/hooks/use-connectivity';
 import { trackActivity } from '@/lib/ai-personalization';
 import { supabase } from '@/integrations/supabase/client';
 import { CLASSES } from '@/lib/curriculum';
@@ -29,6 +32,7 @@ const DRAFT_KEY = 'syllabix:current-lesson-draft-id';
 export default function LessonPlanForm() {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
+  const { reachable, probe } = useConnectivity();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [step, setStep] = useState(0);
@@ -179,8 +183,10 @@ export default function LessonPlanForm() {
       toast.error('Please enter subject, class level, topic, and at least one objective');
       return;
     }
-    if (!isOnline) {
-      toast.error('Internet connection required for AI generation');
+    // Confirm real reachability, not just navigator.onLine (handles captive portals).
+    const canReach = await probe();
+    if (!canReach) {
+      toast.error('No working internet connection. Your details are saved as a draft — reconnect and tap "Generate with AI" again.');
       return;
     }
     setIsGenerating(true);
@@ -216,8 +222,8 @@ export default function LessonPlanForm() {
       setAiDraft(data);
       if (data.curriculumPosition) setCurriculumPosition(data.curriculumPosition);
       toast.success('AI plan ready — review it before accepting');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to generate lesson note');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to generate lesson note');
     } finally {
       setIsGenerating(false);
     }
@@ -293,7 +299,8 @@ export default function LessonPlanForm() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await saveLessonPlan(fullPlan);
+    // Offline-first: always lands in IndexedDB, then syncs (or queues) to the cloud.
+    await saveLessonPlanOfflineFirst(fullPlan);
     setPlanId(fullPlan.id);
     if (status === 'draft') {
       localStorage.setItem(DRAFT_KEY, fullPlan.id);
@@ -305,14 +312,15 @@ export default function LessonPlanForm() {
     if (status === 'complete') navigate('/');
   };
 
-  // Autosave every 30s
+  // Debounced draft persistence — saves ~2s after any change so a crash or
+  // closed tab loses at most a couple seconds of typing (works offline via IndexedDB).
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (plan.topic) {
-        handleSave('draft');
-      }
-    }, 30000);
-    return () => clearInterval(interval);
+    if (!plan.subject && !plan.topic?.trim()) return;
+    const t = setTimeout(() => {
+      handleSave('draft');
+    }, 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan]);
 
   const availableSubjects = profile?.subjects || [];
@@ -506,10 +514,12 @@ export default function LessonPlanForm() {
                   </div>
                 );
               })()}
-              {!isOnline && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border">
-                  <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-[11px] text-muted-foreground">AI generation requires internet connection</p>
+              {(!isOnline || !reachable) && (
+                <div className="flex items-start gap-2 p-2 rounded-lg bg-warning/5 border border-warning/30">
+                  <WifiOff className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: 'hsl(var(--warning))' }} />
+                  <p className="text-[11px]" style={{ color: 'hsl(var(--warning))' }}>
+                    You're offline. Keep typing — everything is saved on this device as a draft. AI generation will work again once you reconnect; your saved plans stay available offline.
+                  </p>
                 </div>
               )}
             </div>
@@ -740,6 +750,22 @@ export default function LessonPlanForm() {
 
           {aiDraft && (
             <div className="space-y-4 text-sm">
+              {/* Grounding marker: verified curriculum vs AI-generated */}
+              {aiDraft.grounded ? (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg border border-primary/30 bg-primary/5">
+                  <ShieldCheck className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-primary">
+                    Curriculum-verified{aiDraft.groundingSource ? ` (${aiDraft.groundingSource})` : ''} — this topic matches the approved scheme for this week.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg border border-warning/30 bg-warning/5">
+                  <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" style={{ color: 'hsl(var(--warning))' }} />
+                  <p className="text-[11px]" style={{ color: 'hsl(var(--warning))' }}>
+                    AI-generated, not curriculum-verified for this exact week. Please cross-check against your scheme of work.
+                  </p>
+                </div>
+              )}
               {aiDraft.objectives?.length > 0 && (
                 <section>
                   <h4 className="font-semibold text-foreground mb-1">Objectives</h4>
