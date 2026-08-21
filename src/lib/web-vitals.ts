@@ -1,10 +1,12 @@
 import { onCLS, onINP, onLCP, onFCP, onTTFB, type Metric } from "web-vitals";
+import { hasAnalyticsConsent } from "./consent";
 
 /**
- * Lightweight Real User Monitoring for Core Web Vitals.
- * Reports LCP, INP, CLS, FCP and TTFB. In dev it logs to the console;
- * in production it forwards each metric to the user_activity table
- * (best-effort, non-blocking, never throws).
+ * Privacy-friendly Real User Monitoring for Core Web Vitals.
+ *
+ * - No third-party analytics, no cookies, no advertising identifiers.
+ * - No IP address, user id, query string or page content is ever sent.
+ * - Only runs after the user explicitly accepts in the consent banner.
  */
 function handleMetric(metric: Metric) {
   if (import.meta.env.DEV) {
@@ -12,16 +14,17 @@ function handleMetric(metric: Metric) {
     return;
   }
 
+  if (!hasAnalyticsConsent()) return;
+
   try {
     const body = JSON.stringify({
       name: metric.name,
-      value: metric.value,
+      value: Math.round(metric.value),
       rating: metric.rating,
-      id: metric.id,
+      // pathname only — never search params, which can carry personal data
       path: window.location.pathname,
     });
 
-    // sendBeacon survives page unload; falls back to no-op if unavailable.
     if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
       const blob = new Blob([body], { type: "application/json" });
       navigator.sendBeacon("/api/vitals", blob);
