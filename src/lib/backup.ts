@@ -1,4 +1,5 @@
 import { errorMessage } from '@/lib/utils';
+import { validateJsonUpload } from '@/lib/upload-guard';
 import { supabase } from '@/integrations/supabase/client';
 import {
   getProfile, saveProfile, getAllLessonPlans, saveLessonPlan,
@@ -139,8 +140,10 @@ async function applyBackup(backup: BackupData): Promise<{ success: boolean; erro
   }
 }
 
-/** Restore from a local JSON file */
+/** Restore from a local JSON file (size + magic-byte validated first) */
 export async function restoreFromFile(file: File): Promise<{ success: boolean; error?: string; stats?: string }> {
+  const check = await validateJsonUpload(file);
+  if (!check.ok) return { success: false, error: check.error };
   try {
     const text = await file.text();
     const backup: BackupData = JSON.parse(text);
