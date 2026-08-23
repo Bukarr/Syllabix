@@ -109,6 +109,7 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <InstallPrompt />
+      <CookieConsent />
       <BrowserRouter>
         <FlowPersistence />
         <Suspense fallback={<PageFallback />}>
@@ -117,6 +118,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin" element={<Admin />} />
           <Route
             path="*"
             element={
