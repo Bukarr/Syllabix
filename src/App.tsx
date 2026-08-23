@@ -109,9 +109,9 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <InstallPrompt />
-      <CookieConsent />
       <BrowserRouter>
         <FlowPersistence />
+        <CookieConsent />
         <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
