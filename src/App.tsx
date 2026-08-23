@@ -27,7 +27,9 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Contact = lazy(() => import("./pages/Contact"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Admin = lazy(() => import("./pages/Admin"));
 import InstallPrompt from "./components/InstallPrompt";
+import CookieConsent from "./components/CookieConsent";
 import { initNotifications } from "./lib/notifications";
 import { getProfile } from "./lib/db";
 import { initTheme } from "./lib/theme";
@@ -109,12 +111,14 @@ const App = () => (
       <InstallPrompt />
       <BrowserRouter>
         <FlowPersistence />
+        <CookieConsent />
         <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin" element={<Admin />} />
           <Route
             path="*"
             element={
