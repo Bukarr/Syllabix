@@ -47,14 +47,15 @@ export function ResourceRecommendations({ subject, classLevel, topic, visible }:
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { setLoading(false); return; }
-      const token = session.access_token;
+      const authHeaders = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
       const resp = await fetch(RESOURCES_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...authHeaders,
         },
         body: JSON.stringify({ subject, classLevel, topic }),
       });
