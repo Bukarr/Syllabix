@@ -192,14 +192,15 @@ export default function LessonPlanForm() {
     setIsGenerating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { toast.error('Please sign in to use AI features'); setIsGenerating(false); return; }
-      const token = session.access_token;
+      const authHeaders = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
       const resp = await fetch(GENERATE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...authHeaders,
         },
         body: JSON.stringify({
           subject: plan.subject,
