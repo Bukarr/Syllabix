@@ -10,28 +10,21 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const supabase = authHeader
+      ? createClient(supabaseUrl, supabaseKey, { global: { headers: { Authorization: authHeader } } })
+      : null;
+    let userId: string | null = null;
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
     }
 
     const svc = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: allowed } = await svc.rpc('check_and_increment_rate_limit', {
-      _identifier: user.id,
+      _identifier: userId ?? `anon:${req.headers.get('x-forwarded-for') ?? 'unknown'}`,
       _endpoint: 'ai-suggestions',
       _max: 20,
       _window_seconds: 60,
@@ -45,20 +38,20 @@ Deno.serve(async (req) => {
 
     // Fetch user activity (last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: activities } = await supabase
-      .from('user_activity')
-      .select('feature, subject, class_level, topic, created_at')
-      .eq('user_id', user.id)
-      .gte('created_at', thirtyDaysAgo)
-      .order('created_at', { ascending: false })
-      .limit(200);
+    const { data: activities } = supabase && userId
+      ? await supabase
+        .from('user_activity')
+        .select('feature, subject, class_level, topic, created_at')
+        .eq('user_id', userId)
+        .gte('created_at', thirtyDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(200)
+      : { data: [] };
 
     // Fetch user profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, role')
-      .eq('user_id', user.id)
-      .single();
+    const { data: profile } = supabase && userId
+      ? await supabase.from('profiles').select('display_name, role').eq('user_id', userId).single()
+      : { data: null };
 
     const apiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!apiKey) {
@@ -157,14 +150,16 @@ Generate personalized suggestions based on their usage patterns.`
     // Store suggestions in DB
     if (suggestions.length > 0) {
       // Clear old undismissed suggestions
-      await supabase
-        .from('ai_suggestions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('dismissed', false);
+      if (supabase && userId) {
+        await supabase
+          .from('ai_suggestions')
+          .delete()
+          .eq('user_id', userId)
+          .eq('dismissed', false);
+      }
 
       const rows = suggestions.map((s: any) => ({
-        user_id: user.id,
+        user_id: userId,
         type: s.type || 'explore',
         title: s.title || '',
         description: s.description || '',
@@ -173,7 +168,7 @@ Generate personalized suggestions based on their usage patterns.`
         priority: s.priority || 1,
       }));
 
-      await supabase.from('ai_suggestions').insert(rows);
+      if (supabase && userId) await supabase.from('ai_suggestions').insert(rows);
     }
 
     // Also return dashboard ordering based on usage
