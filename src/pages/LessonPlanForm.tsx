@@ -22,7 +22,8 @@ import { trackActivity } from '@/lib/ai-personalization';
 import { supabase } from '@/integrations/supabase/client';
 import { CLASSES } from '@/lib/curriculum';
 
-const STEPS = ['Details', 'Objectives', 'Note Content', 'Classwork'];
+const STEPS = ['General Information', 'Objectives & Materials', 'Lesson Presentation', 'Evaluation & Assignment'];
+const PRESENTATION_STAGES = ['Introduction', 'Step I', 'Step II', 'Step III'];
 
 const ALL_CLASSES = Object.values(CLASSES).flat();
 
@@ -46,14 +47,20 @@ export default function LessonPlanForm() {
     week: 1,
     date: new Date().toISOString().split('T')[0],
     duration: '40 minutes',
+    timePeriod: '',
+    gender: '',
+    classSize: '',
+    averageAge: '',
     topic: '',
     subTopic: '',
     objectives: [''],
+    previousKnowledge: '',
     entryBehaviour: '',
     materials: [],
     references: '',
-    steps: [{ teacherActivity: '', studentActivity: '' }],
+    steps: PRESENTATION_STAGES.map(stage => ({ stage, teacherActivity: '', studentActivity: '' })),
     evaluation: '',
+    conclusion: '',
     assignment: '',
     status: 'draft',
   });
@@ -157,7 +164,7 @@ export default function LessonPlanForm() {
     }));
   };
 
-  const updateStep = (index: number, field: 'teacherActivity' | 'studentActivity', value: string) => {
+  const updateStep = (index: number, field: 'teacherActivity' | 'studentActivity' | 'stage', value: string) => {
     setPlan(p => {
       const newSteps = [...(p.steps || [])];
       newSteps[index] = { ...newSteps[index], [field]: value };
@@ -207,6 +214,7 @@ export default function LessonPlanForm() {
           classLevel: plan.classLevel,
           topic: plan.topic,
           subTopic: plan.subTopic,
+           objectives: plan.objectives?.filter(Boolean),
           term: plan.term,
           week: plan.week,
           resources: plan.materials,
@@ -235,11 +243,20 @@ export default function LessonPlanForm() {
     setPlan(prev => ({
       ...prev,
       objectives: aiDraft.objectives?.length ? aiDraft.objectives : prev.objectives,
+      // The requested topic is immutable: AI may enrich the plan, but never rename it.
+      topic: prev.topic,
+      subTopic: prev.subTopic,
+      previousKnowledge: aiDraft.previousKnowledge || prev.previousKnowledge,
       entryBehaviour: aiDraft.entryBehaviour || prev.entryBehaviour,
+      timePeriod: aiDraft.timePeriod || prev.timePeriod,
+      gender: aiDraft.gender || prev.gender,
+      classSize: aiDraft.classSize || prev.classSize,
+      averageAge: aiDraft.averageAge || prev.averageAge,
       materials: aiDraft.materials || prev.materials,
       references: aiDraft.references || prev.references,
       steps: aiDraft.steps || prev.steps,
       evaluation: aiDraft.evaluation || prev.evaluation,
+      conclusion: aiDraft.conclusion || prev.conclusion,
       assignment: aiDraft.assignment || prev.assignment,
     }));
     setAiDraft(null);
@@ -266,10 +283,16 @@ export default function LessonPlanForm() {
         topic: plan.topic,
         subTopic: plan.subTopic,
         duration: plan.duration,
+         timePeriod: plan.timePeriod,
+         gender: plan.gender,
+         classSize: plan.classSize,
+         averageAge: plan.averageAge,
         objectives: plan.objectives,
+         previousKnowledge: plan.previousKnowledge,
         entryBehaviour: plan.entryBehaviour,
         references: plan.references,
         evaluation: plan.evaluation,
+         conclusion: plan.conclusion,
         assignment: plan.assignment,
         steps: plan.steps,
       });
@@ -287,14 +310,20 @@ export default function LessonPlanForm() {
       week: plan.week || 1,
       date: plan.date || '',
       duration: plan.duration || '',
+      timePeriod: plan.timePeriod || '',
+      gender: plan.gender || '',
+      classSize: plan.classSize || '',
+      averageAge: plan.averageAge || '',
       topic: plan.topic || '',
       subTopic: plan.subTopic || '',
       objectives: plan.objectives?.filter(Boolean) || [],
+      previousKnowledge: plan.previousKnowledge || '',
       entryBehaviour: plan.entryBehaviour || '',
       materials: plan.materials || [],
       references: plan.references || '',
       steps: plan.steps || [],
       evaluation: plan.evaluation || '',
+      conclusion: plan.conclusion || '',
       assignment: plan.assignment || '',
       status,
       createdAt: new Date().toISOString(),
@@ -350,7 +379,7 @@ export default function LessonPlanForm() {
       >
         {step === 0 && (
           <>
-            <h2 className="text-xl font-heading font-bold">Lesson Details</h2>
+            <h2 className="text-xl font-heading font-bold">A. General Information</h2>
 
             {/* Curriculum Position Banner */}
             {curriculumPosition && (
@@ -440,7 +469,7 @@ export default function LessonPlanForm() {
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium">Sub-topic</Label>
+                <Label className="text-sm font-medium">Sub-topic (optional)</Label>
                 <Input
                   placeholder="e.g. Addition of 2-digit numbers"
                   maxLength={200}
@@ -451,6 +480,30 @@ export default function LessonPlanForm() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm font-medium">Name of School</Label>
+                  <Input value={profile?.schoolName || ''} readOnly placeholder="School name" className="mt-1.5 touch-target" />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Time / Period</Label>
+                  <Input value={plan.timePeriod} onChange={e => updatePlan('timePeriod', e.target.value)} placeholder="e.g. 9:00–9:40 am" className="mt-1.5 touch-target" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm font-medium">Gender</Label>
+                  <Input value={plan.gender} onChange={e => updatePlan('gender', e.target.value)} placeholder="e.g. Mixed" className="mt-1.5 touch-target" />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">No. in Class</Label>
+                  <Input value={plan.classSize} onChange={e => updatePlan('classSize', e.target.value)} placeholder="e.g. 35" className="mt-1.5 touch-target" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm font-medium">Average Age of Learners</Label>
+                  <Input value={plan.averageAge} onChange={e => updatePlan('averageAge', e.target.value)} placeholder="e.g. 10 years" className="mt-1.5 touch-target" />
+                </div>
                 <div>
                   <Label className="text-sm font-medium">Date</Label>
                   <Input
@@ -469,6 +522,17 @@ export default function LessonPlanForm() {
                     className="mt-1.5 touch-target"
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Previous Knowledge</Label>
+                <Textarea
+                  placeholder="What learners already know before this lesson"
+                  value={plan.previousKnowledge}
+                  onChange={e => updatePlan('previousKnowledge', e.target.value)}
+                  rows={2}
+                  className="mt-1.5 touch-target"
+                />
               </div>
 
               {/* Weak Topics Alert */}
@@ -587,8 +651,8 @@ export default function LessonPlanForm() {
 
         {step === 2 && (
           <>
-            <h2 className="text-xl font-heading font-bold">Lesson Note Content</h2>
-            <p className="text-xs text-muted-foreground">Add the note sections that pupils will copy into their books</p>
+            <h2 className="text-xl font-heading font-bold">B. Lesson Presentation</h2>
+            <p className="text-xs text-muted-foreground">Describe the step-by-step way the teacher presents the lesson. This is not a pupil copy note.</p>
             <div className="space-y-4">
               {plan.steps?.map((s, i) => (
                 <div key={i} className="glass-card rounded-xl p-4 space-y-3">
@@ -596,12 +660,19 @@ export default function LessonPlanForm() {
                     <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
                       <span className="text-xs font-bold text-primary">{i + 1}</span>
                     </div>
-                    <span className="text-sm font-medium">Section {i + 1}</span>
+                    <span className="text-sm font-medium">{s.stage || PRESENTATION_STAGES[i] || `Step ${i + 1}`}</span>
                   </div>
+                  <Input
+                    aria-label={`Presentation stage ${i + 1}`}
+                    placeholder="e.g. Introduction or Step I"
+                    value={s.stage || ''}
+                    onChange={e => updateStep(i, 'stage', e.target.value)}
+                    className="touch-target"
+                  />
                   <div>
-                    <Label className="text-xs text-muted-foreground">Note Content</Label>
+                    <Label className="text-xs text-muted-foreground">Teacher’s Presentation / Activity</Label>
                     <Textarea
-                      placeholder="Content pupils will copy..."
+                      placeholder="State what the teacher does and presents at this stage..."
                       value={s.teacherActivity}
                       onChange={e => updateStep(i, 'teacherActivity', e.target.value)}
                       className="mt-1 touch-target"
@@ -609,9 +680,9 @@ export default function LessonPlanForm() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Pupil Activity</Label>
+                    <Label className="text-xs text-muted-foreground">Learners’ Activity / Response</Label>
                     <Textarea
-                      placeholder="Pupils will..."
+                      placeholder="State what learners do, answer, practise or demonstrate..."
                       value={s.studentActivity}
                       onChange={e => updateStep(i, 'studentActivity', e.target.value)}
                       className="mt-1 touch-target"
@@ -621,7 +692,7 @@ export default function LessonPlanForm() {
                 </div>
               ))}
               <Button variant="outline" onClick={addStep} className="w-full touch-target">
-                + Add Section
+                + Add Presentation Step
               </Button>
             </div>
           </>
@@ -629,8 +700,19 @@ export default function LessonPlanForm() {
 
         {step === 3 && (
           <>
-            <h2 className="text-xl font-heading font-bold">Classwork & Assignment</h2>
+            <h2 className="text-xl font-heading font-bold">C. Evaluation & Assignment</h2>
             <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Conclusion</Label>
+                <p className="text-xs text-muted-foreground mb-1">How the lesson is rounded off and connected to the objective</p>
+                <Textarea
+                  placeholder="Summarise the key learning and close the lesson..."
+                  value={plan.conclusion}
+                  onChange={e => updatePlan('conclusion', e.target.value)}
+                  className="touch-target"
+                  rows={3}
+                />
+              </div>
               <div>
                 <Label className="text-sm font-medium">Classwork / Exercises</Label>
                 <p className="text-xs text-muted-foreground mb-1">Questions or exercises for pupils to attempt in class</p>
