@@ -34,7 +34,7 @@ interface LessonPlan {
   entryBehaviour: string;
   materials: string[];
   references: string;
-  steps: { teacherActivity: string; studentActivity: string }[];
+  steps: { stage?: string; teacherActivity: string; studentActivity: string }[];
   evaluation: string;
   conclusion?: string;
   assignment: string;
