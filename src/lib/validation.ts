@@ -40,7 +40,8 @@ export const lessonPlanSchema = z.object({
   references: z.string().trim().max(500, 'References must be under 500 characters').optional(),
   evaluation: z.string().trim().max(2000, 'Evaluation must be under 2000 characters').optional(),
   assignment: z.string().trim().max(1000, 'Assignment must be under 1000 characters').optional(),
-  steps: z.array(z.object({
+    steps: z.array(z.object({
+     stage: z.string().trim().max(100, 'Stage must be under 100 characters').optional(),
     teacherActivity: z.string().trim().max(1000, 'Teacher activity must be under 1000 characters'),
     studentActivity: z.string().trim().max(1000, 'Student activity must be under 1000 characters'),
   })),

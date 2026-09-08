@@ -39,7 +39,11 @@ export function toLocalPlan(row: RemoteLessonPlan): LessonPlan {
     entryBehaviour: stored.entryBehaviour ?? '',
     materials: stored.materials ?? [],
     references: stored.references ?? '',
-    steps: stored.steps ?? [],
+    steps: (stored.steps ?? []).map((step, index) => ({
+      stage: step.stage ?? `Step ${index + 1}`,
+      teacherActivity: step.teacherActivity ?? '',
+      studentActivity: step.studentActivity ?? '',
+    })),
     evaluation: stored.evaluation ?? '',
     conclusion: stored.conclusion ?? '',
     assignment: stored.assignment ?? '',
