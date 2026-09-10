@@ -46,15 +46,27 @@ export default function Terms() {
           <p>You retain ownership of the lesson plans, notes and other content you create. By using collaboration features, you grant members of your school workspace access to content you share with them.</p>
         </div>
         <div>
-          <h2 className="font-semibold text-base mb-1">7. Disclaimer & Limitation of Liability</h2>
+          <h2 className="font-semibold text-base mb-1">7. Cookies, Consent & Analytics</h2>
+          <p>Syllabix uses essential browser storage to keep the app working offline and remember your preferences. Optional, privacy-friendly performance measurements are enabled only after you choose to accept analytics in the consent banner. You can change your choice through the privacy controls when available.</p>
+        </div>
+        <div>
+          <h2 className="font-semibold text-base mb-1">8. Uploads, Backups & Downloads</h2>
+          <p>Only upload content you have the right to use. Backup files may be stored privately and made available through short-lived, protected download links. You are responsible for keeping downloaded copies secure and for checking that backups are complete before deleting local data.</p>
+        </div>
+        <div>
+          <h2 className="font-semibold text-base mb-1">9. Retention & Deletion</h2>
+          <p>We retain account, workspace and shared content only for as long as needed to provide the service, meet legal obligations, resolve disputes and enforce these Terms. You may request deletion of account data through the support options in the app; local browser data can be removed from your device at any time.</p>
+        </div>
+        <div>
+          <h2 className="font-semibold text-base mb-1">10. Disclaimer & Limitation of Liability</h2>
           <p>The service is provided "as is" without warranties of any kind. To the maximum extent permitted by law, Syllabix and its operators are not liable for any indirect, incidental or consequential damages arising from your use of the app.</p>
         </div>
         <div>
-          <h2 className="font-semibold text-base mb-1">8. Changes to These Terms</h2>
+          <h2 className="font-semibold text-base mb-1">11. Changes to These Terms</h2>
           <p>We may update these Terms from time to time. Continued use after changes constitutes acceptance of the revised Terms.</p>
         </div>
         <div>
-          <h2 className="font-semibold text-base mb-1">9. Contact</h2>
+          <h2 className="font-semibold text-base mb-1">12. Contact</h2>
           <p>For questions about these Terms, please contact us through the support options in the app.</p>
         </div>
       </section>

@@ -27,6 +27,12 @@ const PRESENTATION_STAGES = ['Introduction', 'Step I', 'Step II', 'Step III'];
 
 const ALL_CLASSES = Object.values(CLASSES).flat();
 
+type AIDraft = Partial<LessonPlan> & {
+  grounded?: boolean;
+  groundingSource?: string | null;
+  curriculumPosition?: string;
+};
+
 const GENERATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-lesson`;
 const DRAFT_KEY = 'syllabix:current-lesson-draft-id';
 
@@ -70,7 +76,7 @@ export default function LessonPlanForm() {
   const [curriculumPosition, setCurriculumPosition] = useState('');
 
   // AI review modal
-  const [aiDraft, setAiDraft] = useState<any | null>(null);
+  const [aiDraft, setAiDraft] = useState<AIDraft | null>(null);
   
   // Assessment modal
   const [showAssessment, setShowAssessment] = useState(false);
@@ -153,7 +159,7 @@ export default function LessonPlanForm() {
     }
   }, [plan.subject, plan.classLevel, plan.term, plan.week]);
 
-  const updatePlan = (field: string, value: any) => {
+  const updatePlan = <K extends keyof LessonPlan>(field: K, value: LessonPlan[K]) => {
     setPlan(p => ({ ...p, [field]: value }));
   };
 
@@ -254,7 +260,11 @@ export default function LessonPlanForm() {
       averageAge: aiDraft.averageAge || prev.averageAge,
       materials: aiDraft.materials || prev.materials,
       references: aiDraft.references || prev.references,
-      steps: aiDraft.steps || prev.steps,
+      steps: (aiDraft.steps || prev.steps).map((step, index) => ({
+        stage: step.stage || PRESENTATION_STAGES[index] || `Step ${index + 1}`,
+        teacherActivity: step.teacherActivity || '',
+        studentActivity: step.studentActivity || '',
+      })),
       evaluation: aiDraft.evaluation || prev.evaluation,
       conclusion: aiDraft.conclusion || prev.conclusion,
       assignment: aiDraft.assignment || prev.assignment,
@@ -827,7 +837,7 @@ export default function LessonPlanForm() {
               <Sparkles className="h-5 w-5 text-primary" /> Review AI Lesson Plan
             </DialogTitle>
             <DialogDescription>
-              Review the generated plan below. Accept to load it into the editor, or discard to try again.
+              Review the generated plan below. Accept to load it into the editor, or discard to try again. The requested topic remains unchanged.
             </DialogDescription>
           </DialogHeader>
 
@@ -873,10 +883,11 @@ export default function LessonPlanForm() {
                 <section>
                   <h4 className="font-semibold text-foreground mb-1">Lesson Steps ({aiDraft.steps.length})</h4>
                   <ol className="space-y-2 list-decimal pl-5">
-                    {aiDraft.steps.map((s: any, i: number) => (
-                      <li key={i} className="text-muted-foreground">
-                        <p className="text-foreground/90">{s.teacherActivity}</p>
-                        {s.studentActivity && <p className="text-xs mt-0.5 italic">Pupils: {s.studentActivity}</p>}
+                      {aiDraft.steps.map((s, i) => (
+                        <li key={i} className="text-muted-foreground space-y-0.5">
+                          <p className="font-medium text-foreground/90">{s.stage || `Step ${i + 1}`}</p>
+                          <p><span className="font-medium text-foreground/80">Teacher:</span> {s.teacherActivity}</p>
+                          {s.studentActivity && <p><span className="font-medium text-foreground/80">Learners:</span> {s.studentActivity}</p>}
                       </li>
                     ))}
                   </ol>
