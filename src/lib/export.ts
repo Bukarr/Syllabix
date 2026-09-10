@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable';
 import { type LessonPlan, type SchemeOfWork, type AINote, getProfile } from './db';
 import { stripMarkdown, parseNoteToSections } from './note-formatter';
 
+type AutoTableDocument = jsPDF & { lastAutoTable: { finalY: number } };
+
 export async function exportLessonPlanToPDF(plan: LessonPlan) {
   const profile = await getProfile();
   const doc = new jsPDF('p', 'mm', 'a4');
@@ -48,7 +50,7 @@ export async function exportLessonPlanToPDF(plan: LessonPlan) {
     margin: { left: margin, right: margin },
   });
 
-  y = (doc as any).lastAutoTable.finalY + 6;
+  y = (doc as AutoTableDocument).lastAutoTable.finalY + 6;
 
   // Performance Objectives
   doc.setFont('helvetica', 'bold');
@@ -120,7 +122,7 @@ export async function exportLessonPlanToPDF(plan: LessonPlan) {
     margin: { left: margin, right: margin },
   });
 
-  y = (doc as any).lastAutoTable.finalY + 6;
+  y = (doc as AutoTableDocument).lastAutoTable.finalY + 6;
 
   if (y > 250) {
     doc.addPage();

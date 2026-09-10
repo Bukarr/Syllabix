@@ -27,6 +27,12 @@ const PRESENTATION_STAGES = ['Introduction', 'Step I', 'Step II', 'Step III'];
 
 const ALL_CLASSES = Object.values(CLASSES).flat();
 
+type AIDraft = Partial<LessonPlan> & {
+  grounded?: boolean;
+  groundingSource?: string | null;
+  curriculumPosition?: string;
+};
+
 const GENERATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-lesson`;
 const DRAFT_KEY = 'syllabix:current-lesson-draft-id';
 
@@ -70,7 +76,7 @@ export default function LessonPlanForm() {
   const [curriculumPosition, setCurriculumPosition] = useState('');
 
   // AI review modal
-  const [aiDraft, setAiDraft] = useState<any | null>(null);
+  const [aiDraft, setAiDraft] = useState<AIDraft | null>(null);
   
   // Assessment modal
   const [showAssessment, setShowAssessment] = useState(false);
@@ -153,7 +159,7 @@ export default function LessonPlanForm() {
     }
   }, [plan.subject, plan.classLevel, plan.term, plan.week]);
 
-  const updatePlan = (field: string, value: any) => {
+  const updatePlan = <K extends keyof LessonPlan>(field: K, value: LessonPlan[K]) => {
     setPlan(p => ({ ...p, [field]: value }));
   };
 
@@ -877,7 +883,7 @@ export default function LessonPlanForm() {
                 <section>
                   <h4 className="font-semibold text-foreground mb-1">Lesson Steps ({aiDraft.steps.length})</h4>
                   <ol className="space-y-2 list-decimal pl-5">
-                      {aiDraft.steps.map((s: any, i: number) => (
+                      {aiDraft.steps.map((s, i) => (
                         <li key={i} className="text-muted-foreground space-y-0.5">
                           <p className="font-medium text-foreground/90">{s.stage || `Step ${i + 1}`}</p>
                           <p><span className="font-medium text-foreground/80">Teacher:</span> {s.teacherActivity}</p>
