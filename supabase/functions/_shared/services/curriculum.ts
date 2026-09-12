@@ -8,6 +8,11 @@ export interface CurriculumGrounding {
   objectives: string[];
 }
 
+/** Compare curriculum labels without allowing punctuation or casing to change the requested topic. */
+function normalizeCurriculumLabel(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+}
+
 /**
  * Look up the verified NERDC record for a curriculum slot.
  * Logs a coverage gap when nothing verified exists, so seeding can be expanded.
@@ -41,7 +46,13 @@ export async function groundCurriculum(params: {
       .eq("verified", true)
       .maybeSingle();
 
-    if (!data) {
+    // The week is only a candidate slot. Never use its objectives when its topic
+    // differs from the teacher's requested topic.
+    const topicMatches = Boolean(
+      data && normalizeCurriculumLabel(data.topic) === normalizeCurriculumLabel(params.topic),
+    );
+
+    if (!data || !topicMatches) {
       await svc.from("curriculum_gaps").insert({
         subject: params.subject,
         class_level: params.classLevel,
