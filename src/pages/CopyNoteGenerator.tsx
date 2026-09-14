@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PenLine, Send, Copy, Check, RefreshCw, Loader2, BookOpen, ChevronRight, Download, Save, Trash2, Filter, FileText, Edit3, History, ChevronDown, ChevronUp, Eye, Share2 } from 'lucide-react';
@@ -27,14 +28,15 @@ async function streamChat({
   onDelta: (text: string) => void; onDone: () => void; onError: (err: string) => void;
 }) {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) { onError('Please sign in to use AI features'); return; }
-  const token = session.access_token;
+  const authHeaders = session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : {};
   const resp = await fetch(CHAT_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
       apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      ...authHeaders,
     },
     body: JSON.stringify({ messages, classLevel, subject }),
   });
@@ -287,8 +289,8 @@ export default function CopyNoteGenerator() {
         },
         onError: (err) => { toast.error(err); setIsStreaming(false); },
       });
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to generate note');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to generate note');
       setIsStreaming(false);
     }
   }, [messages, isStreaming, classLevel, subject, currentTopic, filteredSOWs, currentNoteId, aiNotes]);
@@ -345,7 +347,7 @@ export default function CopyNoteGenerator() {
       try {
         await navigator.share(shareData);
         toast.success('Note shared!');
-      } catch (e: any) {
+      } catch (e) {
         if (e.name !== 'AbortError') {
           await navigator.clipboard.writeText(cleanText);
           toast.success('Copied to clipboard for sharing!');

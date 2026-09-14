@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -8,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { AppLogo } from '@/components/AppLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { passwordIssues } from '@/lib/validation';
+import { clearFailures, lockoutRemaining, recordFailure } from '@/lib/login-guard';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -21,6 +24,17 @@ export default function Auth() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [lockMs, setLockMs] = useState(() => lockoutRemaining());
+
+  const pwIssues = mode === 'signup' ? passwordIssues(password) : [];
+  const locked = lockMs > 0;
+
+  // Tick the lockout countdown so the form re-enables itself.
+  useEffect(() => {
+    if (!locked) return;
+    const id = window.setInterval(() => setLockMs(lockoutRemaining()), 1000);
+    return () => window.clearInterval(id);
+  }, [locked]);
 
   // Auto-redirect recognized/logged-in devices straight into the app.
   useEffect(() => {
@@ -64,8 +78,8 @@ export default function Auth() {
         if (error) throw error;
         toast.success('Password reset link sent! Check your email.');
         setMode('login');
-      } catch (err: any) {
-        toast.error(err.message || 'Could not send reset link');
+      } catch (err) {
+        toast.error(errorMessage(err) || 'Could not send reset link');
       } finally {
         setLoading(false);
       }
@@ -73,6 +87,14 @@ export default function Auth() {
     }
     if (!email || !password) {
       toast.error('Please fill in all fields');
+      return;
+    }
+    if (mode === 'signup' && pwIssues.length > 0) {
+      toast.error(`Password needs: ${pwIssues.join(', ').toLowerCase()}`);
+      return;
+    }
+    if (mode === 'login' && locked) {
+      toast.error('Too many failed attempts. Please try again later.');
       return;
     }
     setLoading(true);
@@ -91,12 +113,24 @@ export default function Auth() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        clearFailures();
         toast.success('Welcome back!');
         if (next === '/') navigate('/');
         else window.location.replace(next);
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Authentication failed');
+    } catch (err) {
+      if (mode === 'login') {
+        // Throttle credential stuffing; the message stays generic on purpose.
+        const lockedFor = recordFailure();
+        setLockMs(lockoutRemaining());
+        toast.error(
+          lockedFor
+            ? 'Too many failed attempts. Sign-in is locked for 15 minutes.'
+            : 'Incorrect email or password. Please check and try again.',
+        );
+      } else {
+        toast.error(errorMessage(err) || 'Could not create your account. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -168,8 +202,25 @@ export default function Auth() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="pl-10 h-11"
+                aria-describedby={mode === 'signup' ? 'password-requirements' : undefined}
+                aria-invalid={mode === 'signup' && password.length > 0 && pwIssues.length > 0}
               />
             </div>
+            {mode === 'signup' && (
+              <ul id="password-requirements" className="mt-2 space-y-1">
+                {['At least 8 characters', 'One uppercase letter', 'One lowercase letter', 'One number', 'One special character'].map(rule => {
+                  const met = !pwIssues.includes(rule);
+                  return (
+                    <li
+                      key={rule}
+                      className={`text-[11px] ${met ? 'text-primary' : 'text-muted-foreground'}`}
+                    >
+                      {met ? '✓' : '•'} {rule}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
           )}
           {mode === 'login' && (
@@ -181,7 +232,16 @@ export default function Auth() {
               Forgot password?
             </button>
           )}
-          <Button type="submit" disabled={loading} className="w-full h-11 font-semibold">
+          {locked && (
+            <p role="alert" className="text-xs text-destructive">
+              Too many failed attempts. Try again in {Math.ceil(lockMs / 60000)} minute(s).
+            </p>
+          )}
+          <Button
+            type="submit"
+            disabled={loading || (mode === 'login' && locked)}
+            className="w-full h-11 font-semibold"
+          >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

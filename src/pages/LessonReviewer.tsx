@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ClipboardCheck, Loader2, Send, Star, AlertTriangle, CheckCircle2, ArrowRight, Sparkles, WifiOff } from 'lucide-react';
@@ -55,14 +56,15 @@ export default function LessonReviewer() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { toast.error('Please sign in to use AI features'); return; }
-      const token = session.access_token;
+      const authHeaders = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...authHeaders,
         },
         body: JSON.stringify({ lessonPlan, classLevel, subject }),
       });
@@ -75,8 +77,8 @@ export default function LessonReviewer() {
       const result = await resp.json();
       setReview(result);
       toast.success('Review complete!');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to review lesson plan');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to review lesson plan');
     } finally {
       setIsReviewing(false);
     }
@@ -93,14 +95,15 @@ export default function LessonReviewer() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { toast.error('Please sign in to use AI features'); return; }
-      const token = session.access_token;
+      const authHeaders = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
       const resp = await fetch(REVIEW_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...authHeaders,
         },
         body: JSON.stringify({ lessonPlan: fullInput, classLevel, subject, action: 'improve' }),
       });
@@ -136,8 +139,8 @@ export default function LessonReviewer() {
         }
       }
       toast.success('Improved lesson plan generated!');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to improve lesson plan');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to improve lesson plan');
     } finally {
       setIsImproving(false);
     }

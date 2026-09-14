@@ -43,18 +43,30 @@ export default function Privacy() {
         </div>
         <div>
           <h2 className="font-semibold text-base mb-1">6. Your Rights</h2>
-          <p>You can edit or delete your locally stored content at any time. To access, correct or delete account-related data held in the cloud, contact us through the app's support options.</p>
+          <p>You can edit or delete your locally stored content at any time. Subject to applicable law, you may request access, correction, portability, restriction or deletion of account-related data held in the cloud, and you may object to or withdraw consent for optional analytics. Contact us through the app's support options to make a request.</p>
         </div>
         <div>
-          <h2 className="font-semibold text-base mb-1">7. Children's Privacy</h2>
+          <h2 className="font-semibold text-base mb-1">7. Cookies, Local Storage & Consent</h2>
+          <p>Essential local storage and IndexedDB keep drafts available offline, preserve settings and support installation. These technologies are not used to sell or advertise to you. Optional privacy-friendly analytics are disabled unless you explicitly accept them through the consent banner, and are designed not to include account identifiers, IP addresses or query strings.</p>
+        </div>
+        <div>
+          <h2 className="font-semibold text-base mb-1">8. Retention & Deletion</h2>
+          <p>Local drafts remain on your device until you remove them or clear the app's storage. Cloud account, workspace and shared content are retained only while needed to provide the service, meet legal obligations, resolve disputes and protect the platform. You may request account deletion; some records may be retained where the law requires it.</p>
+        </div>
+        <div>
+          <h2 className="font-semibold text-base mb-1">9. Uploads & Backups</h2>
+          <p>Uploaded files and backups are validated, stored privately and accessible only through authorised, short-lived download links. Do not upload sensitive information unless you need the feature and have a lawful basis to do so. You should keep your own important backup copy.</p>
+        </div>
+        <div>
+          <h2 className="font-semibold text-base mb-1">10. Children's Privacy</h2>
           <p>Syllabix is intended for use by teachers and educators, not children. We do not knowingly collect personal data from children.</p>
         </div>
         <div>
-          <h2 className="font-semibold text-base mb-1">8. Changes to This Policy</h2>
+          <h2 className="font-semibold text-base mb-1">11. Changes to This Policy</h2>
           <p>We may update this Privacy Policy periodically. We will update the date above when changes are made.</p>
         </div>
         <div>
-          <h2 className="font-semibold text-base mb-1">9. Contact</h2>
+          <h2 className="font-semibold text-base mb-1">12. Contact</h2>
           <p>If you have questions about how your data is handled, please reach out through the support options in the app.</p>
         </div>
       </section>

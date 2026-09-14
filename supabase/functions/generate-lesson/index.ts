@@ -15,6 +15,7 @@ Deno.serve(
       classLevel: sanitizeText(body.classLevel, 60),
       topic: sanitizeText(body.topic, 200),
       subTopic: sanitizeText(body.subTopic, 200),
+      objectives: sanitizeList(body.objectives),
       term: clampNumber(body.term, 1, 3, 1),
       week: clampNumber(body.week, 1, 13, 1),
       resources: sanitizeList(body.resources),
@@ -44,6 +45,8 @@ Deno.serve(
     const parsed = parseJsonCompletion<Record<string, unknown>>(content);
     if (!parsed) return serverError("Failed to parse generated content");
 
+    parsed.topic = request.topic;
+    parsed.subTopic = request.subTopic;
     parsed.grounded = grounding.grounded;
     parsed.groundingSource = grounding.grounded ? grounding.source : null;
     if (grounding.grounded && grounding.objectives.length) parsed.objectives = grounding.objectives;

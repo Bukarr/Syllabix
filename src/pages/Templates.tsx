@@ -183,7 +183,7 @@ export default function Templates() {
     t.topic.toLowerCase().includes(search.toLowerCase())
   );
 
-  const useTemplate = async (template: Template) => {
+  const applyTemplate = async (template: Template) => {
     const plan: LessonPlan = {
       id: crypto.randomUUID(),
       subject: template.plan.subject || '',
@@ -277,7 +277,7 @@ export default function Templates() {
                   variant="outline"
                   size="sm"
                   className="w-full mt-3 text-xs"
-                  onClick={() => useTemplate(template)}
+                  onClick={() => applyTemplate(template)}
                 >
                   <Copy className="h-3 w-3 mr-1" /> Use This Template
                 </Button>

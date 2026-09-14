@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/utils';
 import { useState } from 'react';
 import { Loader2, FileQuestion, Download, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -58,14 +59,15 @@ export function AssessmentGenerator({ open, onOpenChange, subject, classLevel, t
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { toast.error('Please sign in to use AI features'); setIsGenerating(false); return; }
-      const token = session.access_token;
+      const authHeaders = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
       const resp = await fetch(ASSESSMENT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...authHeaders,
         },
         body: JSON.stringify({ subject, classLevel, topic, subTopic, assessmentType, questionCount: parseInt(questionCount), difficulty }),
       });
@@ -78,8 +80,8 @@ export function AssessmentGenerator({ open, onOpenChange, subject, classLevel, t
       const data = await resp.json();
       setResult(data);
       toast.success('Assessment generated!');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to generate assessment');
+    } catch (e) {
+      toast.error(errorMessage(e) || 'Failed to generate assessment');
     } finally {
       setIsGenerating(false);
     }

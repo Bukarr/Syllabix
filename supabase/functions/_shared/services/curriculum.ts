@@ -8,6 +8,11 @@ export interface CurriculumGrounding {
   objectives: string[];
 }
 
+/** Compare curriculum labels without allowing punctuation or casing to change the requested topic. */
+function normalizeCurriculumLabel(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+}
+
 /**
  * Look up the verified NERDC record for a curriculum slot.
  * Logs a coverage gap when nothing verified exists, so seeding can be expanded.
@@ -41,7 +46,13 @@ export async function groundCurriculum(params: {
       .eq("verified", true)
       .maybeSingle();
 
-    if (!data) {
+    // The week is only a candidate slot. Never use its objectives when its topic
+    // differs from the teacher's requested topic.
+    const topicMatches = Boolean(
+      data && normalizeCurriculumLabel(data.topic) === normalizeCurriculumLabel(params.topic),
+    );
+
+    if (!data || !topicMatches) {
       await svc.from("curriculum_gaps").insert({
         subject: params.subject,
         class_level: params.classLevel,
@@ -55,8 +66,8 @@ export async function groundCurriculum(params: {
     return {
       grounded: true,
       source: data.source ?? "NERDC",
-      topic: data.topic || params.topic,
-      subTopic: data.sub_topic || params.subTopic,
+      topic: params.topic,
+      subTopic: params.subTopic,
       objectives: Array.isArray(data.learning_objectives) ? data.learning_objectives : [],
     };
   } catch (e) {
@@ -70,7 +81,7 @@ export function groundingNote(g: CurriculumGrounding): string {
   if (!g.grounded) {
     return `\n\nNOTE: No verified curriculum record exists for this exact slot. Generate the most NERDC-consistent content you can, but this output is NOT curriculum-verified.`;
   }
-  return `\n\nGROUNDED CURRICULUM DATA (authoritative — align strictly to this): Topic "${g.topic}"${
+  return `\n\nGROUNDED CURRICULUM DATA (use for NERDC alignment while preserving the teacher's requested topic): Topic "${g.topic}"${
     g.subTopic ? `, sub-topic "${g.subTopic}"` : ""
   }, source ${g.source}. Required learning objectives: ${
     g.objectives.length ? g.objectives.join("; ") : "(derive from the verified topic)"

@@ -27,7 +27,9 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Contact = lazy(() => import("./pages/Contact"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Admin = lazy(() => import("./pages/Admin"));
 import InstallPrompt from "./components/InstallPrompt";
+import CookieConsent from "./components/CookieConsent";
 import { initNotifications } from "./lib/notifications";
 import { getProfile } from "./lib/db";
 import { initTheme } from "./lib/theme";
@@ -109,18 +111,27 @@ const App = () => (
       <InstallPrompt />
       <BrowserRouter>
         <FlowPersistence />
+        <CookieConsent />
         <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin" element={<Admin />} />
           <Route
             path="*"
             element={
               <div className="min-h-screen bg-background">
+                {/* Accessibility: keyboard users can jump past the nav (WCAG 2.4.1) */}
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+                >
+                  Skip to main content
+                </a>
                 <TopBar />
-                <main>
+                <main id="main-content" tabIndex={-1}>
                   <Suspense fallback={<ContentFallback />}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />

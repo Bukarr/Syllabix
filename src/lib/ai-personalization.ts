@@ -29,15 +29,13 @@ export async function trackActivity(params: {
 export async function fetchSuggestions() {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return { suggestions: [], featureOrder: [] };
 
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-suggestions`;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
     const resp = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
+      headers,
       body: JSON.stringify({}),
     });
 

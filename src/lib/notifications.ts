@@ -17,7 +17,9 @@ export function getNotificationSettings(): NotificationSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    /* corrupted or unavailable storage — fall back to defaults */
+  }
   return { ...DEFAULT_SETTINGS };
 }
 
@@ -57,7 +59,7 @@ function scheduleNextNotification(settings: NotificationSettings) {
   const [hours, minutes] = settings.reminderTime.split(':').map(Number);
 
   // Find next matching day/time
-  let target = new Date(now);
+  const target = new Date(now);
   target.setHours(hours, minutes, 0, 0);
 
   // If time already passed today, start from tomorrow
