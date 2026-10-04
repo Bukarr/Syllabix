@@ -1,3 +1,4 @@
-- [ ] Add Word, PDF, and image scheme upload with AI extraction for the selected subject and class; save extracted weeks into the existing offline scheme store.
-- [ ] Keep AI-generated lesson presentation to at most four concise steps, followed by conclusion and evaluation.
-- [ ] Route shared function calls to the Cloud endpoint so AI features work on Vercel deployments.
+- [x] Add Word, PDF, and image scheme upload with AI extraction for the selected subject and class; save extracted weeks into the existing offline scheme store.
+- [x] Keep AI-generated lesson presentation to at most four concise steps, followed by conclusion and evaluation.
+- [x] Route shared function calls to the Cloud endpoint so AI features work on Vercel deployments.
+- [ ] Deploy and verify the scheme-extraction function and test application checks.
