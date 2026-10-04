@@ -39,7 +39,9 @@ RULES:
 - Do NOT mention curriculum documents, AI, or internal reasoning
 - Do NOT copy curriculum text verbatim — interpret it into teacher actions and learner activities
 - If the requested topic is broad, narrow the activities to that topic without renaming it
-- Presentation steps must be a practical sequence: introduction, explanation or demonstration, guided practice, learner practice, assessment and closure
+- Return exactly four concise presentation steps: Introduction, Step I, Step II, Step III. Never add a fifth step or put conclusion/evaluation inside the steps.
+- Keep each teacher and learner activity to one short sentence (no more than 24 words each); describe actions, not extended explanations or pupil copy notes.
+- Return conclusion and evaluation as separate fields after the presentation steps.
 - The teacherActivity field must contain what the teacher does and presents at that stage, not content for pupils to copy
 - The studentActivity field must contain how learners participate, respond, practise or demonstrate understanding
 - Content should be inspection-ready and suitable for Nigerian school standards
@@ -74,12 +76,8 @@ OUTPUT FORMAT — Return a valid JSON object with these exact keys:
       "teacherActivity": "Give individual or group practice on ${r.topic}, move around the class, check understanding and provide support.",
       "studentActivity": "Work individually or in groups, present responses and make corrections from feedback."
     },
-    {
-      "stage": "Conclusion",
-      "teacherActivity": "Review the key points, link them to the objectives, ask oral assessment questions and clarify remaining difficulties.",
-      "studentActivity": "Summarise what they learned, answer assessment questions and identify any part they need help with."
-    }
   ],
+  "conclusion": "Briefly recap the key learning and connect it to the objectives.",
   "evaluation": "CLASSWORK / EXERCISES:\\n1. Question one\\n2. Question two\\n3. Question three",
   "assignment": "HOMEWORK / TAKE-HOME ASSIGNMENT:\\nTask for pupils to complete at home"
 }
@@ -109,5 +107,5 @@ ${r.resources.length ? `- Available resources: ${r.resources.join(", ")}` : "- A
 Curriculum Position: ${curriculumPositionOf(r)}
 Ensure this content is sequenced appropriately for this point in the Nigerian academic calendar. Build on what students should have covered in earlier weeks this term.
 
-Generate a structured lesson plan with a short entry behaviour, materials, references, five or more practical presentation stages, classwork/evaluation, conclusion and homework. Every activity must remain focused on the exact requested topic: "${r.topic}". Do not turn the presentation steps into copy notes.${weakTopicNote}`;
+Generate a structured, concise lesson plan with a short entry behaviour, materials, references, exactly four brief presentation steps, then a separate conclusion, evaluation/classwork and homework. Keep each activity to one short sentence (24 words maximum). Every activity must remain focused on the exact requested topic: "${r.topic}". Do not turn the presentation steps into copy notes.${weakTopicNote}`;
 }

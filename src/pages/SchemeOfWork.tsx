@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Download, Plus, Trash2, Edit2, ChevronDown, ChevronUp, Save, Calendar, MessageSquare } from 'lucide-react';
+import { BookOpen, Download, Plus, Trash2, Edit2, ChevronDown, ChevronUp, Save, Calendar, MessageSquare, Upload, Loader2 } from 'lucide-react';
 import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,109 @@ export default function SchemeOfWork() {
   const [expandedSOW, setExpandedSOW] = useState<string | null>(null);
   const [activeTerm, setActiveTerm] = useState(1);
   const [viewMode, setViewMode] = useState<'term' | 'full'>('term');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSchemeUpload = async (file?: File) => {
+    if (!file) return;
+    if (!subject || !classLevel) {
+      toast.error('Select the subject and class before uploading a scheme.');
+      return;
+    }
+    const allowed = /\.(docx|pdf|png|jpe?g|webp)$/i.test(file.name);
+    if (!allowed) {
+      toast.error('Upload a Word document (.docx), PDF, PNG, JPG, or WebP image.');
+      return;
+    }
+    if (!file.size || file.size > 4 * 1024 * 1024) {
+      toast.error('Choose a non-empty file smaller than 4 MB.');
+      return;
+    }
+
+    setIsExtracting(true);
+    try {
+      const isDocx = /\.docx$/i.test(file.name);
+      let payload: Record<string, string> = {
+        subject,
+        classLevel,
+        filename: file.name.slice(0, 160),
+      };
+      if (isDocx) {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.default.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+        const text = result.value.trim();
+        if (text.length < 40) throw new Error('No readable scheme text was found in the Word document.');
+        if (text.length > 100000) throw new Error('The Word document contains too much text. Please upload a shorter scheme.');
+        payload = { ...payload, text };
+      } else {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        let mimeType = '';
+        if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+          mimeType = 'application/pdf';
+        } else if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+          mimeType = 'image/png';
+        } else if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+          mimeType = 'image/jpeg';
+        } else if (String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP') {
+          mimeType = 'image/webp';
+        } else {
+          throw new Error('The file contents do not match a supported PDF or image format.');
+        }
+        const base64 = btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
+        payload = { ...payload, mimeType, fileBase64: base64 };
+      }
+
+      const { data: { session } } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
+      const backend = import.meta.env.VITE_SUPABASE_URL?.replace(/\/+$/, '');
+      if (!backend) throw new Error('Cloud functions are not configured for this app.');
+      const response = await fetch(`${backend}/functions/v1/extract-scheme`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Scheme extraction failed (${response.status}).`);
+      const weeks = Array.isArray(result.weeks) ? result.weeks : [];
+      if (!weeks.length) throw new Error('No weekly topics could be extracted from this file.');
+      const extracted = Array.from({ length: 39 }, (_, i) => emptyWeek(i + 1));
+      for (const item of weeks) {
+        const term = Number(item.term);
+        const week = Number(item.week);
+        if (!Number.isInteger(term) || term < 1 || term > 3 || !Number.isInteger(week) || week < 1 || week > 13) continue;
+        const index = (term - 1) * 13 + week - 1;
+        const objectives = Array.isArray(item.objectives)
+          ? item.objectives.filter((value: unknown): value is string => typeof value === 'string' && value.trim()).slice(0, 10)
+          : [];
+        const materials = Array.isArray(item.materials)
+          ? item.materials.filter((value: unknown): value is string => typeof value === 'string' && value.trim()).slice(0, 10)
+          : [];
+        extracted[index] = {
+          ...emptyWeek(index + 1),
+          topic: typeof item.topic === 'string' ? item.topic.slice(0, 200) : '',
+          subTopic: typeof item.subTopic === 'string' ? item.subTopic.slice(0, 200) : '',
+          objectives,
+          materials,
+        };
+      }
+      const count = extracted.filter(week => week.topic.trim()).length;
+      if (!count) throw new Error('No valid Term 1–3 weekly topics were found in the scheme.');
+      setAllWeeks(extracted);
+      setUploadedFileName(file.name);
+      setActiveTerm(1);
+      setViewMode('term');
+      toast.success(`Extracted ${count} weekly topics. Review them, then save the scheme.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not extract the scheme.');
+    } finally {
+      setIsExtracting(false);
+      if (uploadInputRef.current) uploadInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => { loadData(); }, []);
 
@@ -128,6 +231,7 @@ export default function SchemeOfWork() {
     setClassLevel('');
     setYear(new Date().getFullYear().toString());
     setAllWeeks([]);
+    setUploadedFileName('');
     setShowForm(false);
     setActiveTerm(1);
   };
@@ -268,6 +372,25 @@ export default function SchemeOfWork() {
               <div>
                 <Label className="text-xs font-medium">Academic Year</Label>
                 <Input value={year} onChange={e => setYear(e.target.value)} className="mt-1.5 h-9 text-sm" />
+              </div>
+              <div className="space-y-2 border-t border-border/40 pt-4">
+                <div>
+                  <Label className="text-xs font-medium">Import Scheme of Work</Label>
+                  <p className="text-xs text-muted-foreground mt-1">Upload a Word document, PDF, or clear photo for {classLevel || 'the selected class'}.</p>
+                </div>
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept=".docx,.pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  aria-label="Upload scheme of work"
+                  onChange={event => void handleSchemeUpload(event.target.files?.[0])}
+                  disabled={isExtracting}
+                />
+                <Button type="button" variant="outline" className="w-full touch-target" onClick={() => uploadInputRef.current?.click()} disabled={isExtracting || !subject || !classLevel}>
+                  {isExtracting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Extracting scheme…</> : <><Upload className="mr-2 h-4 w-4" />Choose file to extract</>}
+                </Button>
+                {uploadedFileName && <p className="text-xs text-muted-foreground">Imported: {uploadedFileName}</p>}
               </div>
             </div>
 
