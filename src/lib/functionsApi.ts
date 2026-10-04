@@ -3,7 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 export type ApiResult<T> = { ok: boolean; status: number; data?: T; error?: string };
 
 async function callFunction<T = any>(path: string, options: RequestInit = {}): Promise<ApiResult<T>> {
-  const url = `${location.origin}/functions/v1/${path}`;
+  const functionPath = path.replace(/^\/+/, '');
+  const cloudUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/\/+$/, '');
+  if (!cloudUrl) return { ok: false, status: 500, error: 'Cloud functions are not configured.' };
+  const url = `${cloudUrl}/functions/v1/${functionPath}`;
   const headers = new Headers(options.headers || {});
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 

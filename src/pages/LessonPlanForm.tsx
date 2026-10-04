@@ -166,7 +166,9 @@ export default function LessonPlanForm() {
   const addStep = () => {
     setPlan(p => ({
       ...p,
-      steps: [...(p.steps || []), { teacherActivity: '', studentActivity: '' }],
+      steps: (p.steps || []).length >= PRESENTATION_STAGES.length
+        ? p.steps
+        : [...(p.steps || []), { teacherActivity: '', studentActivity: '' }],
     }));
   };
 
@@ -260,7 +262,7 @@ export default function LessonPlanForm() {
       averageAge: aiDraft.averageAge || prev.averageAge,
       materials: aiDraft.materials || prev.materials,
       references: aiDraft.references || prev.references,
-      steps: (aiDraft.steps || prev.steps).map((step, index) => ({
+      steps: (aiDraft.steps || prev.steps).slice(0, PRESENTATION_STAGES.length).map((step, index) => ({
         stage: step.stage || PRESENTATION_STAGES[index] || `Step ${index + 1}`,
         teacherActivity: step.teacherActivity || '',
         studentActivity: step.studentActivity || '',
@@ -701,9 +703,11 @@ export default function LessonPlanForm() {
                   </div>
                 </div>
               ))}
-              <Button variant="outline" onClick={addStep} className="w-full touch-target">
-                + Add Presentation Step
-              </Button>
+              {(plan.steps || []).length < PRESENTATION_STAGES.length && (
+                <Button variant="outline" onClick={addStep} className="w-full touch-target">
+                  + Add Presentation Step
+                </Button>
+              )}
             </div>
           </>
         )}
@@ -881,9 +885,9 @@ export default function LessonPlanForm() {
               )}
               {aiDraft.steps?.length > 0 && (
                 <section>
-                  <h4 className="font-semibold text-foreground mb-1">Lesson Steps ({aiDraft.steps.length})</h4>
+                  <h4 className="font-semibold text-foreground mb-1">Lesson Steps ({Math.min(aiDraft.steps.length, PRESENTATION_STAGES.length)})</h4>
                   <ol className="space-y-2 list-decimal pl-5">
-                      {aiDraft.steps.map((s, i) => (
+                      {aiDraft.steps.slice(0, PRESENTATION_STAGES.length).map((s, i) => (
                         <li key={i} className="text-muted-foreground space-y-0.5">
                           <p className="font-medium text-foreground/90">{s.stage || `Step ${i + 1}`}</p>
                           <p><span className="font-medium text-foreground/80">Teacher:</span> {s.teacherActivity}</p>
@@ -891,6 +895,12 @@ export default function LessonPlanForm() {
                       </li>
                     ))}
                   </ol>
+                </section>
+              )}
+              {aiDraft.conclusion && (
+                <section>
+                  <h4 className="font-semibold text-foreground mb-1">Conclusion</h4>
+                  <p className="text-muted-foreground">{aiDraft.conclusion}</p>
                 </section>
               )}
               {aiDraft.evaluation && (
