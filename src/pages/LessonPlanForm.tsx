@@ -43,6 +43,7 @@ export default function LessonPlanForm() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [step, setStep] = useState(0);
+  const [weekInput, setWeekInput] = useState<string | null>(null);
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [sows, setSows] = useState<SchemeOfWork[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -458,10 +459,17 @@ export default function LessonPlanForm() {
                 <div>
                   <Label className="text-sm font-medium">Week (1–13)</Label>
                   <Input
-                    type="number"
-                    min={1} max={13}
-                    value={plan.week}
-                    onChange={e => updatePlan('week', parseInt(e.target.value) || 1)}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="1–13"
+                    value={weekInput ?? String(plan.week)}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
+                      setWeekInput(raw);
+                      const n = parseInt(raw, 10);
+                      if (n >= 1 && n <= 13) updatePlan('week', n);
+                    }}
+                    onBlur={() => setWeekInput(null)}
                     className="mt-1.5 touch-target"
                   />
                 </div>
