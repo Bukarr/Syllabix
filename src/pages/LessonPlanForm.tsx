@@ -43,6 +43,7 @@ export default function LessonPlanForm() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [step, setStep] = useState(0);
+  const [weekInput, setWeekInput] = useState<string | null>(null);
   const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [sows, setSows] = useState<SchemeOfWork[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
