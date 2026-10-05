@@ -118,10 +118,10 @@ export default function SchemeOfWork() {
         if (!Number.isInteger(term) || term < 1 || term > 3 || !Number.isInteger(week) || week < 1 || week > 13) continue;
         const index = (term - 1) * 13 + week - 1;
         const objectives = Array.isArray(item.objectives)
-          ? item.objectives.filter((value: unknown): value is string => typeof value === 'string' && value.trim()).slice(0, 10)
+          ? item.objectives.filter((value: unknown): value is string => typeof value === 'string' && Boolean(value.trim())).slice(0, 10)
           : [];
         const materials = Array.isArray(item.materials)
-          ? item.materials.filter((value: unknown): value is string => typeof value === 'string' && value.trim()).slice(0, 10)
+          ? item.materials.filter((value: unknown): value is string => typeof value === 'string' && Boolean(value.trim())).slice(0, 10)
           : [];
         extracted[index] = {
           ...emptyWeek(index + 1),
