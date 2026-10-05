@@ -47,6 +47,7 @@ Deno.serve(
 
     parsed.topic = request.topic;
     parsed.subTopic = request.subTopic;
+    if (Array.isArray(parsed.steps)) parsed.steps = parsed.steps.slice(0, 4);
     parsed.grounded = grounding.grounded;
     parsed.groundingSource = grounding.grounded ? grounding.source : null;
     if (grounding.grounded && grounding.objectives.length) parsed.objectives = grounding.objectives;
